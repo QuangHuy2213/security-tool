@@ -556,4 +556,34 @@ tbody tr:hover {
         align-items: flex-start;
         flex-direction: column;
     }
+    .unblock-btn {
+    padding: 7px 11px;
+    border: 1px solid #31558a;
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.1);
+    color: #93c5fd;
+    cursor: pointer;
+    font-size: 11px;
+    }
+
+    .unblock-btn:hover {
+    background: #2563eb;
+    color: white;
+    }
+    .unblock-btn {
+    padding: 7px 12px;
+    border: 1px solid #31558a;
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.1);
+    color: #93c5fd;
+    cursor: pointer;
+    font-size: 11px;
+    transition: 0.2s;
+    }
+
+    .unblock-btn:hover {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: white;
+    }
 }

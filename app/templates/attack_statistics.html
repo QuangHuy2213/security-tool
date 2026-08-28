@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thống kê tấn công</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<aside class="sidebar">
+    <div class="brand">
+        <div class="brand-icon">🛡</div>
+        <div>
+            <h2>Security Tool</h2>
+            <span>Giám sát bảo mật</span>
+        </div>
+    </div>
+
+    <nav class="menu">
+        <a href="/"><span>▦</span> Bảng điều khiển</a>
+        <a href="/su-kien-bao-mat"><span>⚠</span> Sự kiện bảo mật</a>
+        <a href="/thong-ke-tan-cong" class="active"><span>▥</span> Thống kê tấn công</a>
+        <a href="/ip-bi-chan"><span>⊘</span> Danh sách IP bị chặn</a>
+        <a href="#"><span>⚙</span> Quy tắc bảo mật</a>
+        <a href="#"><span>☰</span> Cài đặt</a>
+    </nav>
+</aside>
+
+<main class="main-content">
+    <header class="topbar">
+        <div>
+            <h1>Thống kê tấn công</h1>
+            <p>Phân tích các loại tấn công mà Security Tool đã phát hiện.</p>
+        </div>
+    </header>
+
+    <section class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-top"><span>Tổng request</span></div>
+            <strong>{{ stats.requests }}</strong>
+            <p>Request đã được phân tích</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top"><span>Tổng tấn công</span></div>
+            <strong>{{ stats.attacks }}</strong>
+            <p>Tổng số hành vi đáng ngờ</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top"><span>Đã chặn</span></div>
+            <strong>{{ stats.blocked }}</strong>
+            <p>Số request bị Security Gateway chặn</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top"><span>Nghiêm trọng</span></div>
+            <strong>{{ stats.critical }}</strong>
+            <p>Các mối đe dọa Risk Score ≥ 90</p>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <div>
+                <h2>Phân loại tấn công</h2>
+                <p>Thống kê theo loại tấn công được phát hiện.</p>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>LOẠI TẤN CÔNG</th>
+                    <th>SỐ LƯỢNG</th>
+                    <th>ĐÃ CHẶN</th>
+                    <th>RỦI RO TRUNG BÌNH</th>
+                    <th>TỶ LỆ CHẶN</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                {% if statistics %}
+                    {% for item in statistics %}
+                    <tr>
+                        <td><strong>{{ item.attack_type }}</strong></td>
+                        <td>{{ item.count }}</td>
+                        <td>{{ item.blocked }}</td>
+                        <td>
+                            {% if item.average_risk >= 90 %}
+                                <span class="risk-badge risk-critical">{{ item.average_risk }}</span>
+                            {% elif item.average_risk >= 60 %}
+                                <span class="risk-badge risk-high">{{ item.average_risk }}</span>
+                            {% else %}
+                                <span class="risk-badge risk-medium">{{ item.average_risk }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.count > 0 %}
+                                {{ ((item.blocked / item.count) * 100)|round(1) }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <div class="empty-shield">▥</div>
+                            <strong>Chưa có dữ liệu thống kê</strong>
+                            <p>Khi phát hiện tấn công, số liệu sẽ xuất hiện ở đây.</p>
+                        </td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách IP bị chặn</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="brand">
+        <div class="brand-icon">🛡</div>
+        <div>
+            <h2>Security Tool</h2>
+            <span>Giám sát bảo mật</span>
+        </div>
+    </div>
+
+    <nav class="menu">
+        <a href="/"><span>▦</span> Bảng điều khiển</a>
+        <a href="/su-kien-bao-mat"><span>⚠</span> Sự kiện bảo mật</a>
+        <a href="/thong-ke-tan-cong"><span>▥</span> Thống kê tấn công</a>
+        <a href="/ip-bi-chan" class="active"><span>⊘</span> Danh sách IP bị chặn</a>
+        <a href="#"><span>⚙</span> Quy tắc bảo mật</a>
+        <a href="#"><span>☰</span> Cài đặt</a>
+    </nav>
+
+    <div class="sidebar-status">
+        <div class="status-line">
+            <span class="status-dot"></span>
+            <strong>Hệ thống hoạt động</strong>
+        </div>
+        <p>Security Gateway đang giám sát và ngăn chặn các IP có hành vi bất thường.</p>
+    </div>
+</aside>
+
+<main class="main-content">
+
+    <header class="topbar">
+        <div>
+            <h1>Danh sách IP bị chặn</h1>
+            <p>Quản lý các địa chỉ IP bị Security Tool ngăn truy cập do có hành vi đáng ngờ hoặc vi phạm nhiều lần.</p>
+        </div>
+
+        <div class="protection-status">
+            <span class="status-dot"></span>
+            {{ blocked_ips|length }} IP đang bị chặn
+        </div>
+    </header>
+
+    <section class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-top">
+                <span>IP đang bị chặn</span>
+                <div class="stat-icon red">⊘</div>
+            </div>
+            <strong>{{ blocked_ips|length }}</strong>
+            <p>Tổng số địa chỉ IP hiện đang bị khóa.</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <span>Trạng thái bảo vệ</span>
+                <div class="stat-icon blue">🛡</div>
+            </div>
+            <strong style="font-size: 20px;">Đang hoạt động</strong>
+            <p>Gateway đang kiểm tra IP trước khi chuyển request tới backend.</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <span>Ngưỡng tự động chặn</span>
+                <div class="stat-icon orange">⚠</div>
+            </div>
+            <strong>3</strong>
+            <p>IP sẽ bị khóa sau 3 lần vi phạm mức rủi ro cao.</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <span>Chặn ngay</span>
+                <div class="stat-icon purple">!</div>
+            </div>
+            <strong>95+</strong>
+            <p>Risk Score từ 95 trở lên sẽ khóa IP ngay lập tức.</p>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <div>
+                <h2>IP đang bị khóa</h2>
+                <p>Danh sách địa chỉ IP không được phép gửi request qua Security Gateway.</p>
+            </div>
+
+            <button class="refresh-btn" onclick="window.location.reload()">
+                ↻ Làm mới
+            </button>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>ĐỊA CHỈ IP</th>
+                    <th>SỐ LẦN VI PHẠM</th>
+                    <th>TỔNG ĐIỂM RỦI RO</th>
+                    <th>LÝ DO CHẶN</th>
+                    <th>THỜI GIAN CHẶN</th>
+                    <th>TRẠNG THÁI</th>
+                    <th>THAO TÁC</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                {% if blocked_ips %}
+                    {% for item in blocked_ips %}
+                    <tr>
+                        <td>
+                            <span class="ip-text">{{ item.ip_address }}</span>
+                        </td>
+
+                        <td>
+                            <strong>{{ item.violation_count }}</strong>
+                        </td>
+
+                        <td>
+                            {% if item.total_risk >= 270 %}
+                                <span class="risk-badge risk-critical">
+                                    {{ item.total_risk }}
+                                </span>
+                            {% elif item.total_risk >= 180 %}
+                                <span class="risk-badge risk-high">
+                                    {{ item.total_risk }}
+                                </span>
+                            {% else %}
+                                <span class="risk-badge risk-medium">
+                                    {{ item.total_risk }}
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ item.reason }}
+                        </td>
+
+                        <td>
+                            {{ item.blocked_at }}
+                        </td>
+
+                        <td>
+                            <span class="action-badge action-block">
+                                ĐANG CHẶN
+                            </span>
+                        </td>
+
+                        <td>
+                            <form
+                                method="post"
+                                action="/ip-bi-chan/{{ item.ip_address }}/bo-chan"
+                                onsubmit="return confirm('Bạn có chắc muốn bỏ chặn IP {{ item.ip_address }}?')"
+                            >
+                                <button type="submit" class="unblock-btn">
+                                    Bỏ chặn
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                {% else %}
+
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <div class="empty-shield">✓</div>
+                            <strong>Chưa có IP nào bị chặn</strong>
+                            <p>Khi một IP vi phạm quy tắc bảo mật nhiều lần hoặc có Risk Score quá cao, địa chỉ IP đó sẽ tự động xuất hiện tại đây.</p>
+                        </td>
+                    </tr>
+
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="info-grid" style="margin-top: 20px;">
+
+        <div class="info-card">
+            <div class="info-header">
+                <h3>Cơ chế tự động chặn IP</h3>
+                <p>Security Tool đánh giá mỗi request dựa trên mức độ nguy hiểm.</p>
+            </div>
+
+            <div class="service-row">
+                <span>Vi phạm lần 1</span>
+                <span class="service-active">Ghi nhận</span>
+            </div>
+
+            <div class="service-row">
+                <span>Vi phạm lần 2</span>
+                <span class="service-active">Theo dõi</span>
+            </div>
+
+            <div class="service-row">
+                <span>Vi phạm lần 3</span>
+                <span class="action-badge action-block">CHẶN IP</span>
+            </div>
+
+            <div class="service-row">
+                <span>Risk Score ≥ 95</span>
+                <span class="action-badge action-block">CHẶN NGAY</span>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-header">
+                <h3>Quy trình xử lý IP</h3>
+                <p>Mọi request đều được kiểm tra IP trước khi chuyển tới backend.</p>
+            </div>
+
+            <div class="risk-row">
+                <span><i class="risk-dot low"></i> IP bình thường</span>
+                <strong>CHO PHÉP</strong>
+            </div>
+
+            <div class="risk-row">
+                <span><i class="risk-dot medium"></i> Có dấu hiệu bất thường</span>
+                <strong>THEO DÕI</strong>
+            </div>
+
+            <div class="risk-row">
+                <span><i class="risk-dot high"></i> Vi phạm nhiều lần</span>
+                <strong>CẢNH BÁO</strong>
+            </div>
+
+            <div class="risk-row">
+                <span><i class="risk-dot critical"></i> IP đã bị khóa</span>
+                <strong>403 BLOCK</strong>
+            </div>
+        </div>
+
+    </section>
+
+    <footer class="footer">
+        Hệ thống phát hiện, cảnh báo và ngăn chặn hành vi tấn công trên website bất động sản
+    </footer>
+
+</main>
+
+</body>
+</html>

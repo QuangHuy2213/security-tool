@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sự kiện bảo mật</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<aside class="sidebar">
+    <div class="brand">
+        <div class="brand-icon">🛡</div>
+        <div>
+            <h2>Security Tool</h2>
+            <span>Giám sát bảo mật</span>
+        </div>
+    </div>
+
+    <nav class="menu">
+        <a href="/"><span>▦</span> Bảng điều khiển</a>
+        <a href="/su-kien-bao-mat" class="active"><span>⚠</span> Sự kiện bảo mật</a>
+        <a href="/thong-ke-tan-cong"><span>▥</span> Thống kê tấn công</a>
+        <a href="/ip-bi-chan"><span>⊘</span> Danh sách IP bị chặn</a>
+        <a href="#"><span>⚙</span> Quy tắc bảo mật</a>
+        <a href="#"><span>☰</span> Cài đặt</a>
+    </nav>
+</aside>
+
+<main class="main-content">
+    <header class="topbar">
+        <div>
+            <h1>Sự kiện bảo mật</h1>
+            <p>Theo dõi toàn bộ hành vi tấn công và request đáng ngờ được hệ thống phát hiện.</p>
+        </div>
+        <div class="protection-status">
+            <span class="status-dot"></span>
+            Giám sát đang hoạt động
+        </div>
+    </header>
+
+    <section class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-top"><span>Tổng request</span></div>
+            <strong>{{ stats.requests }}</strong>
+            <p>Request đã được Security Gateway kiểm tra</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top"><span>Tấn công phát hiện</span></div>
+            <strong>{{ stats.attacks }}</strong>
+            <p>Tổng sự kiện tấn công</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top"><span>Đã chặn</span></div>
+            <strong>{{ stats.blocked }}</strong>
+            <p>Request đã bị hệ thống từ chối</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top"><span>Nghiêm trọng</span></div>
+            <strong>{{ stats.critical }}</strong>
+            <p>Các sự kiện có Risk Score ≥ 90</p>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <div>
+                <h2>Danh sách sự kiện</h2>
+                <p>Sắp xếp từ sự kiện mới nhất đến cũ nhất.</p>
+            </div>
+            <button class="refresh-btn" onclick="location.reload()">↻ Làm mới</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>THỜI GIAN</th>
+                    <th>IP</th>
+                    <th>REQUEST</th>
+                    <th>LOẠI TẤN CÔNG</th>
+                    <th>RỦI RO</th>
+                    <th>HÀNH ĐỘNG</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                {% if events %}
+                    {% for event in events %}
+                    <tr>
+                        <td>{{ event.time }}</td>
+                        <td><span class="ip-text">{{ event.ip_address }}</span></td>
+                        <td>
+                            <span class="method method-{{ event.method|lower }}">{{ event.method }}</span>
+                            <span class="request-path">{{ event.path }}</span>
+                        </td>
+                        <td>{{ event.attack_type }}</td>
+                        <td>
+                            {% if event.risk_score >= 90 %}
+                                <span class="risk-badge risk-critical">{{ event.risk_score }}/100</span>
+                            {% elif event.risk_score >= 60 %}
+                                <span class="risk-badge risk-high">{{ event.risk_score }}/100</span>
+                            {% elif event.risk_score >= 30 %}
+                                <span class="risk-badge risk-medium">{{ event.risk_score }}/100</span>
+                            {% else %}
+                                <span class="risk-badge risk-low">{{ event.risk_score }}/100</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if event.action == "BLOCK" %}
+                                <span class="action-badge action-block">ĐÃ CHẶN</span>
+                            {% else %}
+                                <span class="action-badge action-alert">CẢNH BÁO</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div class="empty-shield">🛡</div>
+                            <strong>Chưa có sự kiện bảo mật</strong>
+                            <p>Các sự kiện tấn công sẽ được hiển thị tại đây.</p>
+                        </td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>
