@@ -2,274 +2,213 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ thống giám sát bảo mật</title>
-
-    <link
-        rel="stylesheet"
-        href="/static/css/style.css"
-    >
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
-
 <body>
+<aside class="sidebar">
+    <div class="brand">
+        <div class="brand-icon">🛡</div>
+        <div>
+            <h2>Security Tool</h2>
+            <span>Giám sát bảo mật</span>
+        </div>
+    </div>
 
-    <aside class="sidebar">
+    <nav class="menu">
+        <a href="/" class="active"><span>▦</span> Bảng điều khiển</a>
+        <a href="#"><span>⚠</span> Sự kiện bảo mật</a>
+        <a href="#"><span>▥</span> Thống kê tấn công</a>
+        <a href="#"><span>⊘</span> Danh sách IP bị chặn</a>
+        <a href="#"><span>⚙</span> Quy tắc bảo mật</a>
+        <a href="#"><span>☰</span> Cài đặt</a>
+    </nav>
 
-        <div class="logo">
-            <div class="logo-icon">
-                🛡️
+    <div class="sidebar-status">
+        <div class="status-line">
+            <span class="status-dot"></span>
+            <strong>Hệ thống hoạt động</strong>
+        </div>
+        <p>Security Gateway đang giám sát request.</p>
+    </div>
+</aside>
+
+<main class="main-content">
+    <header class="topbar">
+        <div>
+            <h1>Bảng điều khiển bảo mật</h1>
+            <p>Giám sát, phát hiện và ngăn chặn các hành vi tấn công trên website bất động sản.</p>
+        </div>
+        <div class="protection-status">
+            <span class="status-dot"></span>
+            Bảo vệ đang hoạt động
+        </div>
+    </header>
+
+    <section class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-top">
+                <span>Tổng yêu cầu</span>
+                <div class="stat-icon blue">↗</div>
+            </div>
+            <strong>{{ stats.requests }}</strong>
+            <p>Tổng số request đi qua Security Gateway</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <span>Tấn công phát hiện</span>
+                <div class="stat-icon orange">⚠</div>
+            </div>
+            <strong>{{ stats.attacks }}</strong>
+            <p>Các request có dấu hiệu tấn công</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <span>Yêu cầu đã chặn</span>
+                <div class="stat-icon red">⊘</div>
+            </div>
+            <strong>{{ stats.blocked }}</strong>
+            <p>Request bị từ chối trước khi tới backend</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <span>Mối đe dọa nghiêm trọng</span>
+                <div class="stat-icon purple">!</div>
+            </div>
+            <strong>{{ stats.critical }}</strong>
+            <p>Sự kiện có điểm rủi ro từ 90 trở lên</p>
+        </div>
+    </section>
+
+    <section class="info-grid">
+        <div class="info-card">
+            <div class="info-header">
+                <div>
+                    <h3>Trạng thái hệ thống</h3>
+                    <p>Tình trạng các thành phần bảo vệ</p>
+                </div>
             </div>
 
-            <div>
-                <strong>Security Tool</strong>
-                <small>Giám sát bảo mật</small>
+            <div class="service-row">
+                <span>Security Gateway</span>
+                <span class="service-active">Hoạt động</span>
+            </div>
+            <div class="service-row">
+                <span>SQL Injection Detector</span>
+                <span class="service-active">Hoạt động</span>
+            </div>
+            <div class="service-row">
+                <span>XSS Detector</span>
+                <span class="service-active">Hoạt động</span>
+            </div>
+            <div class="service-row">
+                <span>Risk Scoring Engine</span>
+                <span class="service-active">Hoạt động</span>
             </div>
         </div>
 
-
-        <nav>
-
-            <a href="/" class="active">
-                📊 Bảng điều khiển
-            </a>
-
-            <a href="#">
-                🛡️ Sự kiện bảo mật
-            </a>
-
-            <a href="#">
-                📈 Thống kê tấn công
-            </a>
-
-            <a href="#">
-                🚫 Danh sách IP bị chặn
-            </a>
-
-            <a href="#">
-                ⚙️ Quy tắc bảo mật
-            </a>
-
-            <a href="#">
-                🔧 Cài đặt
-            </a>
-
-        </nav>
-
-    </aside>
-
-
-    <main class="main-content">
-
-        <header class="header">
-
-            <div>
-
-                <h1>
-                    Bảng điều khiển bảo mật
-                </h1>
-
-                <p>
-                    Giám sát và bảo vệ website bất động sản theo thời gian thực
-                </p>
-
-            </div>
-
-
-            <div class="protection-status">
-
-                <span class="status-dot"></span>
-
-                <span>
-                    Hệ thống bảo vệ đang hoạt động
-                </span>
-
-            </div>
-
-        </header>
-
-
-        <section class="stats">
-
-            <article class="stat-card">
-
-                <div class="stat-title">
-                    Tổng yêu cầu
-                </div>
-
-                <div class="stat-value">
-                    {{ stats.requests }}
-                </div>
-
-                <div class="stat-description">
-                    Tổng số request đã được kiểm tra
-                </div>
-
-            </article>
-
-
-            <article class="stat-card">
-
-                <div class="stat-title">
-                    Tấn công phát hiện
-                </div>
-
-                <div class="stat-value">
-                    {{ stats.attacks }}
-                </div>
-
-                <div class="stat-description">
-                    Các request có dấu hiệu bất thường
-                </div>
-
-            </article>
-
-
-            <article class="stat-card">
-
-                <div class="stat-title">
-                    Yêu cầu đã chặn
-                </div>
-
-                <div class="stat-value">
-                    {{ stats.blocked }}
-                </div>
-
-                <div class="stat-description">
-                    Request bị hệ thống từ chối
-                </div>
-
-            </article>
-
-
-            <article class="stat-card">
-
-                <div class="stat-title">
-                    Mối đe dọa nghiêm trọng
-                </div>
-
-                <div class="stat-value">
-                    {{ stats.critical }}
-                </div>
-
-                <div class="stat-description">
-                    Sự kiện có mức rủi ro cao
-                </div>
-
-            </article>
-
-        </section>
-
-
-        <section class="panel">
-
-            <div class="panel-header">
-
+        <div class="info-card">
+            <div class="info-header">
                 <div>
-
-                    <h2>
-                        Sự kiện bảo mật gần đây
-                    </h2>
-
-                    <p>
-                        Danh sách các request đáng ngờ được hệ thống ghi nhận
-                    </p>
-
+                    <h3>Mức độ rủi ro</h3>
+                    <p>Quy tắc phân loại request hiện tại</p>
                 </div>
-
-                <button class="refresh-button">
-                    Làm mới
-                </button>
-
             </div>
 
-
-            <div class="table-wrapper">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                THỜI GIAN
-                            </th>
-
-                            <th>
-                                ĐỊA CHỈ IP
-                            </th>
-
-                            <th>
-                                YÊU CẦU
-                            </th>
-
-                            <th>
-                                LOẠI TẤN CÔNG
-                            </th>
-
-                            <th>
-                                MỨC RỦI RO
-                            </th>
-
-                            <th>
-                                HÀNH ĐỘNG
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        <tr>
-
-                            <td
-                                colspan="6"
-                                class="empty"
-                            >
-
-                                <div class="empty-icon">
-                                    🛡️
-                                </div>
-
-                                <strong>
-                                    Chưa phát hiện sự kiện bảo mật
-                                </strong>
-
-                                <p>
-                                    Các sự kiện sẽ xuất hiện tại đây khi hệ thống
-                                    phát hiện request đáng ngờ.
-                                </p>
-
-                            </td>
-
-                        </tr>
-
-                    </tbody>
-
-                </table>
-
+            <div class="risk-row">
+                <span><i class="risk-dot low"></i> Bình thường</span>
+                <strong>0 - 29</strong>
             </div>
+            <div class="risk-row">
+                <span><i class="risk-dot medium"></i> Cảnh báo</span>
+                <strong>30 - 59</strong>
+            </div>
+            <div class="risk-row">
+                <span><i class="risk-dot high"></i> Nguy hiểm</span>
+                <strong>60 - 89</strong>
+            </div>
+            <div class="risk-row">
+                <span><i class="risk-dot critical"></i> Nghiêm trọng</span>
+                <strong>90 - 100</strong>
+            </div>
+        </div>
+    </section>
 
-        </section>
+    <section class="panel">
+        <div class="panel-header">
+            <div>
+                <h2>Sự kiện bảo mật gần đây</h2>
+                <p>Danh sách các request đáng ngờ được Security Tool phát hiện.</p>
+            </div>
+            <button id="refreshButton" class="refresh-btn">↻ Làm mới</button>
+        </div>
 
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>THỜI GIAN</th>
+                    <th>ĐỊA CHỈ IP</th>
+                    <th>YÊU CẦU</th>
+                    <th>LOẠI TẤN CÔNG</th>
+                    <th>RỦI RO</th>
+                    <th>HÀNH ĐỘNG</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% if events %}
+                    {% for event in events %}
+                    <tr>
+                        <td>{{ event.time }}</td>
+                        <td><span class="ip-text">{{ event.ip_address }}</span></td>
+                        <td>
+                            <span class="method method-{{ event.method|lower }}">{{ event.method }}</span>
+                            <span class="request-path">{{ event.path }}</span>
+                        </td>
+                        <td>{{ event.attack_type }}</td>
+                        <td>
+                            {% if event.risk_score >= 90 %}
+                                <span class="risk-badge risk-critical">{{ event.risk_score }}/100</span>
+                            {% elif event.risk_score >= 60 %}
+                                <span class="risk-badge risk-high">{{ event.risk_score }}/100</span>
+                            {% elif event.risk_score >= 30 %}
+                                <span class="risk-badge risk-medium">{{ event.risk_score }}/100</span>
+                            {% else %}
+                                <span class="risk-badge risk-low">{{ event.risk_score }}/100</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if event.action == "BLOCK" %}
+                                <span class="action-badge action-block">ĐÃ CHẶN</span>
+                            {% else %}
+                                <span class="action-badge action-alert">CẢNH BÁO</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div class="empty-shield">🛡</div>
+                            <strong>Chưa phát hiện sự kiện bảo mật</strong>
+                            <p>Các sự kiện sẽ xuất hiện tại đây khi hệ thống phát hiện request đáng ngờ.</p>
+                        </td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-        <footer>
+    <footer class="footer">
+        Hệ thống phát hiện, cảnh báo và ngăn chặn hành vi tấn công trên website bất động sản
+    </footer>
+</main>
 
-            Hệ thống phát hiện, cảnh báo và ngăn chặn hành vi tấn công
-            trên website bất động sản
-
-        </footer>
-
-    </main>
-
-
-    <script src="/static/js/dashboard.js"></script>
-
+<script src="/static/js/dashboard.js"></script>
 </body>
 </html>
