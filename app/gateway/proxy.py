@@ -8,15 +8,15 @@ from fastapi import (
 )
 
 from app.core.config import settings
+from app.services.security_service import security_service
 
 
 router = APIRouter(
     prefix="/api",
-    tags=["Security Gateway"],
+    tags=["Cổng bảo mật"],
 )
 
 
-# Các header không nên forward trực tiếp
 HOP_BY_HOP_HEADERS = {
     "connection",
     "keep-alive",
@@ -32,9 +32,6 @@ HOP_BY_HOP_HEADERS = {
 
 
 def build_forward_headers(request: Request):
-    """
-    Chuẩn bị header để gửi sang backend NestJS.
-    """
 
     headers = {}
 
@@ -62,23 +59,58 @@ async def proxy_request(
     request: Request,
     path: str,
 ):
-    """
-    Nhận request từ frontend,
-    sau đó chuyển tiếp tới backend NestJS.
-    """
+
+    # =========================
+    # LẤY IP CLIENT
+    # =========================
+
+    forwarded_for = request.headers.get(
+        "x-forwarded-for"
+    )
+
+    if forwarded_for:
+
+        client_ip = (
+            forwarded_for
+            .split(",")[0]
+            .strip()
+        )
+
+    elif request.client:
+
+        client_ip = request.client.host
+
+    else:
+
+        client_ip = "unknown"
+
+
+    # =========================
+    # GHI NHẬN REQUEST
+    # =========================
+
+    security_service.record_request(
+        ip_address=client_ip,
+        method=request.method,
+        path=f"/api/{path}",
+    )
+
+
+    # =========================
+    # URL BACKEND
+    # =========================
 
     backend_url = (
         f"{settings.BACKEND_URL.rstrip('/')}/{path}"
     )
 
-    # Lấy body của request
+
     body = await request.body()
 
-    # Lấy query parameter
-    query_params = request.query_params
+    headers = build_forward_headers(
+        request
+    )
 
-    # Chuẩn bị header
-    headers = build_forward_headers(request)
 
     try:
 
@@ -87,45 +119,66 @@ async def proxy_request(
             follow_redirects=True,
         ) as client:
 
-            backend_response = await client.request(
-                method=request.method,
-                url=backend_url,
-                params=query_params,
-                content=body,
-                headers=headers,
+            backend_response = (
+                await client.request(
+                    method=request.method,
+                    url=backend_url,
+                    params=request.query_params,
+                    content=body,
+                    headers=headers,
+                )
             )
+
 
     except httpx.TimeoutException:
 
         raise HTTPException(
             status_code=504,
-            detail="Backend phản hồi quá thời gian cho phép.",
+            detail=(
+                "Backend phản hồi quá "
+                "thời gian cho phép."
+            ),
         )
+
 
     except httpx.RequestError as exc:
 
         print(
-            f"Lỗi kết nối backend: {exc}"
+            f"[ERROR] Không thể kết nối "
+            f"backend: {exc}"
         )
 
         raise HTTPException(
             status_code=502,
-            detail="Không thể kết nối tới backend.",
+            detail=(
+                "Không thể kết nối "
+                "tới backend."
+            ),
         )
 
-    # Lọc response header
+
     response_headers = {}
 
-    for key, value in backend_response.headers.items():
+    for key, value in (
+        backend_response.headers.items()
+    ):
 
-        if key.lower() not in HOP_BY_HOP_HEADERS:
+        if (
+            key.lower()
+            not in HOP_BY_HOP_HEADERS
+        ):
             response_headers[key] = value
+
 
     return Response(
         content=backend_response.content,
-        status_code=backend_response.status_code,
+        status_code=(
+            backend_response.status_code
+        ),
         headers=response_headers,
-        media_type=backend_response.headers.get(
-            "content-type"
+        media_type=(
+            backend_response.headers.get(
+                "content-type"
+            )
         ),
     )

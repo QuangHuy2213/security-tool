@@ -8,7 +8,7 @@ load_dotenv()
 class Settings:
     APP_NAME = os.getenv(
         "APP_NAME",
-        "Hệ thống giám sát bảo mật website chợ tốt",
+        "Hệ thống giám sát bảo mật website bất động sản",
     )
 
     APP_ENV = os.getenv(
@@ -18,7 +18,7 @@ class Settings:
 
     BACKEND_URL = os.getenv(
         "BACKEND_URL",
-        "http://localhost:3001",
+        "https://quanghuy-backend.onrender.com",
     )
 
 
