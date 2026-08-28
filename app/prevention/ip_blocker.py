@@ -13,24 +13,37 @@ class IPBlocker:
                 "last_violation": None
             }
 
-        data = self.violations[ip_address]
-        data["count"] += 1
-        data["total_risk"] += risk_score
-        data["last_violation"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        self.violations[ip_address]["count"] += 1
+        self.violations[ip_address]["total_risk"] += risk_score
+        self.violations[ip_address]["last_violation"] = datetime.now().strftime(
+            "%d/%m/%Y %H:%M:%S"
+        )
 
-        should_block = risk_score >= 95 or data["count"] >= 3
+        count = self.violations[ip_address]["count"]
 
-        if should_block:
+        print(
+            f"[VI PHẠM] IP={ip_address} "
+            f"| Lần={count} "
+            f"| Risk={risk_score}"
+        )
+
+        should_block = risk_score >= 95 or count >= 3
+
+        if should_block and not self.is_blocked(ip_address):
             reason = (
                 f"Phát hiện {attack_type}. "
-                f"Số lần vi phạm: {data['count']}. "
+                f"Số lần vi phạm: {count}. "
                 f"Risk Score gần nhất: {risk_score}/100."
             )
-            self.block_ip(ip_address, reason)
+
+            self.block_ip(
+                ip_address=ip_address,
+                reason=reason
+            )
 
         return {
-            "violation_count": data["count"],
-            "blocked": should_block
+            "violation_count": count,
+            "blocked": self.is_blocked(ip_address)
         }
 
     def block_ip(self, ip_address: str, reason: str):
@@ -44,19 +57,18 @@ class IPBlocker:
             "total_risk": violation.get("total_risk", 0)
         }
 
-        print(f"[BLOCK IP] {ip_address} | {reason}")
+        print(f"[KHÓA IP] {ip_address} | {reason}")
 
     def unblock_ip(self, ip_address: str):
-        removed = False
-
         if ip_address in self.blocked_ips:
             del self.blocked_ips[ip_address]
-            removed = True
 
         if ip_address in self.violations:
             del self.violations[ip_address]
 
-        return removed
+        print(f"[BỎ CHẶN IP] {ip_address}")
+
+        return True
 
     def is_blocked(self, ip_address: str):
         return ip_address in self.blocked_ips
@@ -68,6 +80,10 @@ class IPBlocker:
         return list(self.blocked_ips.values())
 
     def get_violation_count(self, ip_address: str):
-        return self.violations.get(ip_address, {}).get("count", 0)
+        if ip_address not in self.violations:
+            return 0
+
+        return self.violations[ip_address]["count"]
+
 
 ip_blocker = IPBlocker()
