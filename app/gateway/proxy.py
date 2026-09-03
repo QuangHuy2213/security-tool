@@ -28,6 +28,7 @@ router = APIRouter(
 )
 
 BLOCK_THRESHOLD = 80
+
 LOGIN_PATH = "auth/login"
 
 INVALID_LOGIN_MESSAGE = (
@@ -37,6 +38,11 @@ INVALID_LOGIN_MESSAGE = (
 SECURITY_GATEWAY_HEADER = (
     "x-security-gateway-key"
 )
+
+
+# =========================================================
+# HEADERS KHÔNG ĐƯỢC FORWARD TRỰC TIẾP
+# =========================================================
 
 HOP_BY_HOP_HEADERS = {
     "connection",
@@ -51,13 +57,17 @@ HOP_BY_HOP_HEADERS = {
     "content-length",
     "content-encoding",
 
-    # Không cho client tự truyền Gateway Secret
+    # Không forward Accept-Encoding từ browser
+    # để tránh backend trả gzip/br/zstd gây lỗi proxy
+    "accept-encoding",
+
+    # Không cho client tự giả Gateway Secret
     SECURITY_GATEWAY_HEADER,
 }
 
 
 # =========================================================
-# FORWARD HEADER
+# BUILD FORWARD HEADERS
 # =========================================================
 
 def build_forward_headers(
@@ -69,10 +79,13 @@ def build_forward_headers(
         if key.lower() not in HOP_BY_HOP_HEADERS:
             headers[key] = value
 
-    # Gateway Secret chỉ FastAPI tự thêm
+    # Gateway Secret chỉ Security Tool tự thêm
     headers["X-Security-Gateway-Key"] = (
         settings.GATEWAY_SECRET
     )
+
+    # Yêu cầu NestJS trả response không nén
+    headers["Accept-Encoding"] = "identity"
 
     return headers
 
@@ -243,7 +256,7 @@ def get_backend_message(
 
 
 # =========================================================
-# SQLI + XSS DETECTOR
+# SQL INJECTION + XSS
 # =========================================================
 
 def analyze_request(
@@ -283,6 +296,7 @@ def analyze_request(
             ),
         })
 
+    # Không phát hiện
     if not results:
         return {
             "detected": False,
@@ -296,6 +310,7 @@ def analyze_request(
         key=lambda item: item["score"],
     )
 
+    # Nhiều dấu hiệu cùng lúc
     if len(results) > 1:
         return {
             "detected": True,
@@ -376,6 +391,7 @@ async def proxy_request(
         f"{request_path}"
     )
 
+
     # =====================================================
     # 2. TOTAL REQUEST
     # =====================================================
@@ -385,6 +401,7 @@ async def proxy_request(
         method=request.method,
         path=request_path,
     )
+
 
     # =====================================================
     # 3. GLOBAL BLOCK
@@ -412,6 +429,7 @@ async def proxy_request(
             },
         )
 
+
     # =====================================================
     # 4. ĐỌC BODY
     # =====================================================
@@ -431,6 +449,7 @@ async def proxy_request(
                 body
             )
         )
+
 
     # =====================================================
     # 5. BRUTE FORCE CHECK
@@ -478,6 +497,7 @@ async def proxy_request(
                 },
             )
 
+
     # =====================================================
     # 6. RATE LIMIT / API ABUSE
     # Login dùng Brute Force riêng
@@ -522,6 +542,13 @@ async def proxy_request(
                 f"giây."
             )
 
+            if violation["blocked"]:
+                reason += (
+                    f" Client đã bị khóa sau "
+                    f"{violation['violation_count']} "
+                    f"lần vi phạm."
+                )
+
             await security_service.record_attack(
                 ip_address=client_ip,
                 client_key=client_key,
@@ -564,6 +591,9 @@ async def proxy_request(
                             "violation_count"
                         ]
                     ),
+                    "ip_blocked": (
+                        violation["blocked"]
+                    ),
                 },
                 headers={
                     "Retry-After": str(
@@ -572,8 +602,9 @@ async def proxy_request(
                 },
             )
 
+
     # =====================================================
-    # 7. SQLI / XSS
+    # 7. SQL INJECTION / XSS
     # =====================================================
 
     analysis = analyze_request(
@@ -654,6 +685,7 @@ async def proxy_request(
                 },
             )
 
+
     # =====================================================
     # 8. KIỂM TRA GATEWAY SECRET
     # =====================================================
@@ -672,6 +704,7 @@ async def proxy_request(
             ),
         )
 
+
     # =====================================================
     # 9. FORWARD SANG NESTJS
     # =====================================================
@@ -681,7 +714,7 @@ async def proxy_request(
         f"/{path}"
     )
 
-    # Debug Gateway Secret - KHÔNG in giá trị secret thật
+    # Debug nhưng không in secret thật
     print(
         "[GATEWAY] Secret configured:",
         bool(settings.GATEWAY_SECRET)
@@ -689,7 +722,10 @@ async def proxy_request(
 
     print(
         "[GATEWAY] Secret length:",
-        len(settings.GATEWAY_SECRET or "")
+        len(
+            settings.GATEWAY_SECRET
+            or ""
+        )
     )
 
     headers = build_forward_headers(
@@ -698,12 +734,15 @@ async def proxy_request(
 
     print(
         "[GATEWAY] Header attached:",
-        "X-Security-Gateway-Key" in headers
+        "X-Security-Gateway-Key"
+        in headers
     )
 
     print(
-        "[GATEWAY] Header value present:",
-        bool(headers.get("X-Security-Gateway-Key"))
+        "[GATEWAY] Accept-Encoding:",
+        headers.get(
+            "Accept-Encoding"
+        )
     )
 
     try:
@@ -751,6 +790,7 @@ async def proxy_request(
             ),
         )
 
+
     # =====================================================
     # 10. PHÂN TÍCH LOGIN RESPONSE
     # =====================================================
@@ -759,7 +799,7 @@ async def proxy_request(
         is_login_request
         and login_identifier
     ):
-        # Login thành công
+        # LOGIN THÀNH CÔNG
         if (
             200
             <= backend_response.status_code
@@ -776,7 +816,7 @@ async def proxy_request(
                 f"Client={client_key[:12]}"
             )
 
-        # Login thất bại
+        # LOGIN THẤT BẠI
         elif (
             backend_response.status_code
             == 401
@@ -787,8 +827,8 @@ async def proxy_request(
                 )
             )
 
-            # Chỉ tính sai email/password.
-            # Không tính tài khoản Google.
+            # Chỉ tính sai email/password
+            # Không tính tài khoản Google
             if (
                 backend_message
                 == INVALID_LOGIN_MESSAGE
@@ -880,8 +920,9 @@ async def proxy_request(
                         },
                     )
 
+
     # =====================================================
-    # 11. RESPONSE NESTJS
+    # 11. RESPONSE TỪ NESTJS
     # =====================================================
 
     response_headers = {}
@@ -889,11 +930,26 @@ async def proxy_request(
     for key, value in (
         backend_response.headers.items()
     ):
+        # Không forward các header encoding/length cũ
+        # vì body đã được httpx xử lý
         if (
             key.lower()
             not in HOP_BY_HOP_HEADERS
         ):
             response_headers[key] = value
+
+
+    # Lấy content-type
+    content_type = (
+        backend_response.headers.get(
+            "content-type"
+        )
+    )
+
+
+    # =====================================================
+    # 12. TRẢ RESPONSE VỀ FRONTEND
+    # =====================================================
 
     return Response(
         content=backend_response.content,
@@ -901,9 +957,5 @@ async def proxy_request(
             backend_response.status_code
         ),
         headers=response_headers,
-        media_type=(
-            backend_response.headers.get(
-                "content-type"
-            )
-        ),
+        media_type=content_type,
     )
