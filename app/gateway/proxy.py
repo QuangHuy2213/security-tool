@@ -681,8 +681,29 @@ async def proxy_request(
         f"/{path}"
     )
 
+    # Debug Gateway Secret - KHÔNG in giá trị secret thật
+    print(
+        "[GATEWAY] Secret configured:",
+        bool(settings.GATEWAY_SECRET)
+    )
+
+    print(
+        "[GATEWAY] Secret length:",
+        len(settings.GATEWAY_SECRET or "")
+    )
+
     headers = build_forward_headers(
         request
+    )
+
+    print(
+        "[GATEWAY] Header attached:",
+        "X-Security-Gateway-Key" in headers
+    )
+
+    print(
+        "[GATEWAY] Header value present:",
+        bool(headers.get("X-Security-Gateway-Key"))
     )
 
     try:
