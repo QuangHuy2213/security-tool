@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
 
@@ -19,6 +18,102 @@ class Settings:
     BACKEND_URL = os.getenv(
         "BACKEND_URL",
         "https://quanghuy-backend.onrender.com",
+    )
+
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL",
+        "",
+    )
+
+    # =====================================================
+    # SECURITY GATEWAY
+    # =====================================================
+
+    GATEWAY_SECRET = os.getenv(
+        "GATEWAY_SECRET",
+        "",
+    )
+
+    # =====================================================
+    # BLOCK IP / CLIENT
+    # =====================================================
+
+    MAX_VIOLATIONS = int(
+        os.getenv(
+            "MAX_VIOLATIONS",
+            "3",
+        )
+    )
+
+    IMMEDIATE_BLOCK_SCORE = int(
+        os.getenv(
+            "IMMEDIATE_BLOCK_SCORE",
+            "95",
+        )
+    )
+
+    BLOCK_DURATION_SECONDS = int(
+        os.getenv(
+            "BLOCK_DURATION_SECONDS",
+            "3600",
+        )
+    )
+
+    # =====================================================
+    # RATE LIMIT / API ABUSE
+    # =====================================================
+
+    RATE_LIMIT_REQUESTS = int(
+        os.getenv(
+            "RATE_LIMIT_REQUESTS",
+            "30",
+        )
+    )
+
+    RATE_LIMIT_WINDOW_SECONDS = int(
+        os.getenv(
+            "RATE_LIMIT_WINDOW_SECONDS",
+            "60",
+        )
+    )
+
+    RATE_LIMIT_RISK_SCORE = int(
+        os.getenv(
+            "RATE_LIMIT_RISK_SCORE",
+            "80",
+        )
+    )
+
+    # =====================================================
+    # BRUTE FORCE LOGIN
+    # =====================================================
+
+    BRUTE_FORCE_MAX_FAILURES = int(
+        os.getenv(
+            "BRUTE_FORCE_MAX_FAILURES",
+            "5",
+        )
+    )
+
+    BRUTE_FORCE_WINDOW_SECONDS = int(
+        os.getenv(
+            "BRUTE_FORCE_WINDOW_SECONDS",
+            "600",
+        )
+    )
+
+    BRUTE_FORCE_BLOCK_SECONDS = int(
+        os.getenv(
+            "BRUTE_FORCE_BLOCK_SECONDS",
+            "900",
+        )
+    )
+
+    BRUTE_FORCE_RISK_SCORE = int(
+        os.getenv(
+            "BRUTE_FORCE_RISK_SCORE",
+            "85",
+        )
     )
 
 
