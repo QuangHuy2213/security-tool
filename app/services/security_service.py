@@ -1,34 +1,46 @@
 from datetime import datetime
 
-from sqlalchemy import select, func, case
+from sqlalchemy import (
+    select,
+    func,
+    case,
+    or_,
+)
 
 from app.database.database import AsyncSessionLocal
-from app.database.models import SecurityEvent, SecurityStats
+from app.database.models import (
+    SecurityEvent,
+    SecurityStats,
+    ClientViolation,
+    BlockedIp,
+)
 
 
-def normalize_attack_type(attack_type: str):
-    """
-    Chuyển tên tấn công hiển thị sang enum AttackType trong PostgreSQL.
-    """
+# =========================================================
+# HELPER
+# =========================================================
+
+def normalize_attack_type(
+    attack_type: str
+):
     attack_map = {
         "Cross-Site Scripting (XSS)": "XSS",
         "SQL Injection": "SQL_INJECTION",
         "Brute Force": "BRUTE_FORCE",
         "API Abuse": "API_ABUSE",
         "Unauthorized Access": "UNAUTHORIZED_ACCESS",
-        "Nhiều dấu hiệu tấn công": "SUSPICIOUS_REQUEST"
+        "Nhiều dấu hiệu tấn công": "SUSPICIOUS_REQUEST",
     }
 
     return attack_map.get(
         attack_type,
-        "SUSPICIOUS_REQUEST"
+        "SUSPICIOUS_REQUEST",
     )
 
 
-def get_severity(risk_score: int):
-    """
-    Phân loại mức độ nghiêm trọng dựa trên Risk Score.
-    """
+def get_severity(
+    risk_score: int
+):
     if risk_score >= 90:
         return "CRITICAL"
 
@@ -41,50 +53,122 @@ def get_severity(risk_score: int):
     return "LOW"
 
 
+def format_datetime(
+    value
+):
+    if not value:
+        return None
+
+    return value.strftime(
+        "%d/%m/%Y %H:%M:%S"
+    )
+
+
+def get_remaining_seconds(
+    expires_at,
+):
+    if not expires_at:
+        return None
+
+    remaining = int(
+        (
+            expires_at
+            - datetime.now()
+        ).total_seconds()
+    )
+
+    return max(
+        remaining,
+        0,
+    )
+
+
+def format_remaining_time(
+    seconds
+):
+    if seconds is None:
+        return "Không giới hạn"
+
+    if seconds <= 0:
+        return "Đã hết hạn"
+
+    hours = seconds // 3600
+
+    minutes = (
+        seconds % 3600
+    ) // 60
+
+    secs = seconds % 60
+
+    if hours > 0:
+        return (
+            f"{hours} giờ "
+            f"{minutes} phút"
+        )
+
+    if minutes > 0:
+        return (
+            f"{minutes} phút "
+            f"{secs} giây"
+        )
+
+    return f"{secs} giây"
+
+
 class SecurityService:
 
-    # =========================================================
+    # =====================================================
     # GHI NHẬN REQUEST
-    # =========================================================
+    # =====================================================
 
     async def record_request(
         self,
         ip_address: str,
         method: str,
-        path: str
+        path: str,
     ):
-        """
-        Tăng tổng số request trong bảng security_stats.
-        """
-
         async with AsyncSessionLocal() as db:
+
             result = await db.execute(
-                select(SecurityStats).where(
+                select(
+                    SecurityStats
+                ).where(
                     SecurityStats.id == 1
                 )
             )
 
-            stats = result.scalar_one_or_none()
+            stats = (
+                result
+                .scalar_one_or_none()
+            )
 
-            # Chưa có record thống kê thì tạo mới
             if stats is None:
                 stats = SecurityStats(
                     id=1,
                     total_requests=1,
-                    updated_at=datetime.now()
+                    updated_at=datetime.now(),
                 )
 
-                db.add(stats)
+                db.add(
+                    stats
+                )
 
-            # Đã có thì tăng request
             else:
                 stats.total_requests += 1
-                stats.updated_at = datetime.now()
+
+                stats.updated_at = (
+                    datetime.now()
+                )
 
             await db.commit()
-            await db.refresh(stats)
 
-            total_requests = stats.total_requests
+            await db.refresh(
+                stats
+            )
+
+            total_requests = (
+                stats.total_requests
+            )
 
         print(
             f"[REQUEST #{total_requests}] "
@@ -94,9 +178,9 @@ class SecurityService:
         )
 
 
-    # =========================================================
+    # =====================================================
     # GHI NHẬN TẤN CÔNG
-    # =========================================================
+    # =====================================================
 
     async def record_attack(
         self,
@@ -109,14 +193,12 @@ class SecurityService:
         risk_score: int,
         action: str,
         reason: str | None = None,
-        user_id: str | None = None
+        user_id: str | None = None,
     ):
-        """
-        Lưu một Security Event vào PostgreSQL.
-        """
-
-        normalized_attack_type = normalize_attack_type(
-            attack_type
+        normalized_attack_type = (
+            normalize_attack_type(
+                attack_type
+            )
         )
 
         severity = get_severity(
@@ -135,14 +217,20 @@ class SecurityService:
             risk_score=risk_score,
             action=action,
             reason=reason,
-            created_at=datetime.now()
+            created_at=datetime.now(),
         )
 
         async with AsyncSessionLocal() as db:
-            db.add(event)
+
+            db.add(
+                event
+            )
 
             await db.commit()
-            await db.refresh(event)
+
+            await db.refresh(
+                event
+            )
 
         print(
             f"[PHÁT HIỆN] "
@@ -156,158 +244,596 @@ class SecurityService:
         return event
 
 
-    # =========================================================
+    # =====================================================
     # THỐNG KÊ DASHBOARD
-    # =========================================================
+    # =====================================================
 
-    async def get_stats(self):
-        """
-        Lấy số liệu tổng quan cho Dashboard.
-        """
+    async def get_stats(
+        self
+    ):
+        now = datetime.now()
 
         async with AsyncSessionLocal() as db:
 
+            # ---------------------------------------------
             # Tổng request
-            request_result = await db.execute(
-                select(SecurityStats).where(
-                    SecurityStats.id == 1
+            # ---------------------------------------------
+
+            request_result = (
+                await db.execute(
+                    select(
+                        SecurityStats
+                    ).where(
+                        SecurityStats.id
+                        == 1
+                    )
                 )
             )
 
             request_stats = (
-                request_result.scalar_one_or_none()
+                request_result
+                .scalar_one_or_none()
             )
 
             total_requests = (
-                request_stats.total_requests
+                request_stats
+                .total_requests
                 if request_stats
                 else 0
             )
 
 
-            # Tổng số tấn công
-            total_attacks = await db.scalar(
-                select(
-                    func.count(
-                        SecurityEvent.id
+            # ---------------------------------------------
+            # Tổng event
+            # ---------------------------------------------
+
+            total_attacks = (
+                await db.scalar(
+                    select(
+                        func.count(
+                            SecurityEvent.id
+                        )
+                    )
+                )
+            ) or 0
+
+
+            # ---------------------------------------------
+            # Tổng BLOCK event
+            # ---------------------------------------------
+
+            total_blocked = (
+                await db.scalar(
+                    select(
+                        func.count(
+                            SecurityEvent.id
+                        )
+                    ).where(
+                        SecurityEvent.action
+                        == "BLOCK"
+                    )
+                )
+            ) or 0
+
+
+            # ---------------------------------------------
+            # CRITICAL
+            # ---------------------------------------------
+
+            total_critical = (
+                await db.scalar(
+                    select(
+                        func.count(
+                            SecurityEvent.id
+                        )
+                    ).where(
+                        SecurityEvent.severity
+                        == "CRITICAL"
+                    )
+                )
+            ) or 0
+
+
+            # ---------------------------------------------
+            # Client/IP đang bị khóa
+            # ---------------------------------------------
+
+            active_blocks = (
+                await db.scalar(
+                    select(
+                        func.count(
+                            BlockedIp.id
+                        )
+                    ).where(
+                        BlockedIp.is_active
+                        .is_(True),
+
+                        or_(
+                            BlockedIp.expires_at
+                            .is_(None),
+
+                            BlockedIp.expires_at
+                            > now,
+                        ),
+                    )
+                )
+            ) or 0
+
+
+            # ---------------------------------------------
+            # Thống kê từng loại tấn công
+            # ---------------------------------------------
+
+            type_result = (
+                await db.execute(
+                    select(
+                        SecurityEvent.attack_type,
+
+                        func.count(
+                            SecurityEvent.id
+                        ),
+                    )
+                    .group_by(
+                        SecurityEvent.attack_type
                     )
                 )
             )
 
-
-            # Tổng số request bị block
-            total_blocked = await db.scalar(
-                select(
-                    func.count(
-                        SecurityEvent.id
-                    )
-                ).where(
-                    SecurityEvent.action == "BLOCK"
-                )
+            rows = (
+                type_result.all()
             )
 
+        attack_counts = {
+            "SQL_INJECTION": 0,
+            "XSS": 0,
+            "API_ABUSE": 0,
+            "BRUTE_FORCE": 0,
+            "UNAUTHORIZED_ACCESS": 0,
+            "SUSPICIOUS_REQUEST": 0,
+        }
 
-            # Tổng số sự kiện nghiêm trọng
-            total_critical = await db.scalar(
-                select(
-                    func.count(
-                        SecurityEvent.id
-                    )
-                ).where(
-                    SecurityEvent.severity == "CRITICAL"
-                )
+        for (
+            attack_type,
+            count,
+        ) in rows:
+
+            code = getattr(
+                attack_type,
+                "value",
+                attack_type,
             )
+
+            attack_counts[
+                str(code)
+            ] = count
 
         return {
-            "requests": total_requests,
-            "attacks": total_attacks or 0,
-            "blocked": total_blocked or 0,
-            "critical": total_critical or 0
+            "requests": (
+                total_requests
+            ),
+
+            "attacks": (
+                total_attacks
+            ),
+
+            "blocked": (
+                total_blocked
+            ),
+
+            "critical": (
+                total_critical
+            ),
+
+            "active_blocks": (
+                active_blocks
+            ),
+
+            "sql_injection": (
+                attack_counts.get(
+                    "SQL_INJECTION",
+                    0,
+                )
+            ),
+
+            "xss": (
+                attack_counts.get(
+                    "XSS",
+                    0,
+                )
+            ),
+
+            "api_abuse": (
+                attack_counts.get(
+                    "API_ABUSE",
+                    0,
+                )
+            ),
+
+            "brute_force": (
+                attack_counts.get(
+                    "BRUTE_FORCE",
+                    0,
+                )
+            ),
+
+            "suspicious": (
+                attack_counts.get(
+                    "SUSPICIOUS_REQUEST",
+                    0,
+                )
+            ),
         }
 
 
-    # =========================================================
-    # DANH SÁCH SECURITY EVENT
-    # =========================================================
+    # =====================================================
+    # SECURITY EVENTS
+    # =====================================================
 
     async def get_events(
         self,
-        limit: int = 200
+        limit: int = 200,
     ):
-        """
-        Lấy danh sách Security Event mới nhất.
-        """
+        now = datetime.now()
 
         async with AsyncSessionLocal() as db:
+
+            # ---------------------------------------------
+            # Event
+            # ---------------------------------------------
+
             result = await db.execute(
-                select(SecurityEvent)
-                .order_by(
-                    SecurityEvent.created_at.desc()
+                select(
+                    SecurityEvent
                 )
-                .limit(limit)
+                .order_by(
+                    SecurityEvent
+                    .created_at
+                    .desc()
+                )
+                .limit(
+                    limit
+                )
             )
 
-            records = result.scalars().all()
+            records = (
+                result
+                .scalars()
+                .all()
+            )
+
+            client_keys = list({
+                item.client_key
+                for item in records
+                if item.client_key
+            })
+
+
+            # ---------------------------------------------
+            # Client Violation
+            # ---------------------------------------------
+
+            violation_map = {}
+
+            if client_keys:
+
+                violation_result = (
+                    await db.execute(
+                        select(
+                            ClientViolation
+                        ).where(
+                            ClientViolation
+                            .client_key
+                            .in_(
+                                client_keys
+                            )
+                        )
+                    )
+                )
+
+                violations = (
+                    violation_result
+                    .scalars()
+                    .all()
+                )
+
+                violation_map = {
+                    item.client_key:
+                    item
+
+                    for item
+                    in violations
+                }
+
+
+            # ---------------------------------------------
+            # Active Block
+            # ---------------------------------------------
+
+            blocked_map = {}
+
+            if client_keys:
+
+                blocked_result = (
+                    await db.execute(
+                        select(
+                            BlockedIp
+                        ).where(
+                            BlockedIp
+                            .client_key
+                            .in_(
+                                client_keys
+                            ),
+
+                            BlockedIp
+                            .is_active
+                            .is_(True),
+
+                            or_(
+                                BlockedIp
+                                .expires_at
+                                .is_(None),
+
+                                BlockedIp
+                                .expires_at
+                                > now,
+                            ),
+                        )
+                        .order_by(
+                            BlockedIp
+                            .blocked_at
+                            .desc()
+                        )
+                    )
+                )
+
+                blocked_records = (
+                    blocked_result
+                    .scalars()
+                    .all()
+                )
+
+                for blocked in blocked_records:
+
+                    if (
+                        blocked.client_key
+                        not in blocked_map
+                    ):
+                        blocked_map[
+                            blocked.client_key
+                        ] = blocked
+
+
+        # =================================================
+        # Build response
+        # =================================================
 
         events = []
 
         for item in records:
+
+            client_key = (
+                item.client_key
+            )
+
+            violation = (
+                violation_map.get(
+                    client_key
+                )
+            )
+
+            blocked = (
+                blocked_map.get(
+                    client_key
+                )
+            )
+
+            remaining_seconds = (
+                get_remaining_seconds(
+                    blocked.expires_at
+                )
+                if blocked
+                else None
+            )
+
+            attack_type_code = (
+                getattr(
+                    item.attack_type,
+                    "value",
+                    item.attack_type,
+                )
+            )
+
+            severity = getattr(
+                item.severity,
+                "value",
+                item.severity,
+            )
+
+            action = getattr(
+                item.action,
+                "value",
+                item.action,
+            )
+
             events.append({
                 "id": item.id,
 
-                "time": (
-                    item.created_at.strftime(
-                        "%d/%m/%Y %H:%M:%S"
-                    )
-                    if item.created_at
-                    else ""
+                # -----------------------------------------
+                # Thời gian
+                # -----------------------------------------
+
+                "time": format_datetime(
+                    item.created_at
                 ),
 
-                "ip_address": item.ip_address,
+                "created_at": (
+                    item.created_at
+                ),
 
-                "client_key": item.client_key,
+                # -----------------------------------------
+                # Client
+                # -----------------------------------------
 
-                "user_id": item.user_id,
+                "ip_address": (
+                    item.ip_address
+                ),
 
-                "user_agent": item.user_agent,
+                "client_key": (
+                    client_key
+                ),
 
-                "method": item.method,
+                "client_key_short": (
+                    (
+                        client_key[:12]
+                        + "..."
+                    )
+                    if client_key
+                    else "-"
+                ),
 
-                "path": item.path,
+                "user_id": (
+                    item.user_id
+                ),
+
+                "user_agent": (
+                    item.user_agent
+                ),
+
+                # -----------------------------------------
+                # Request
+                # -----------------------------------------
+
+                "method": (
+                    item.method
+                ),
+
+                "path": (
+                    item.path
+                ),
+
+                # -----------------------------------------
+                # Attack
+                # -----------------------------------------
 
                 "attack_type": (
-                    self.get_attack_display_name(
-                        item.attack_type
+                    self
+                    .get_attack_display_name(
+                        attack_type_code
                     )
                 ),
 
                 "attack_type_code": (
-                    item.attack_type
+                    attack_type_code
                 ),
 
-                "severity": item.severity,
+                "severity": (
+                    severity
+                ),
 
-                "risk_score": item.risk_score,
+                "risk_score": (
+                    item.risk_score
+                ),
 
-                "action": item.action,
+                "action": (
+                    action
+                ),
 
-                "reason": item.reason
+                "reason": (
+                    item.reason
+                ),
+
+                # -----------------------------------------
+                # Violation
+                # -----------------------------------------
+
+                "violation_count": (
+                    violation
+                    .violation_count
+                    if violation
+                    else 0
+                ),
+
+                "total_risk": (
+                    violation
+                    .total_risk
+                    if violation
+                    else 0
+                ),
+
+                "first_violation_at": (
+                    format_datetime(
+                        violation
+                        .first_violation_at
+                    )
+                    if violation
+                    else None
+                ),
+
+                "last_violation_at": (
+                    format_datetime(
+                        violation
+                        .last_violation_at
+                    )
+                    if violation
+                    else None
+                ),
+
+                # -----------------------------------------
+                # Block
+                # -----------------------------------------
+
+                "is_blocked": (
+                    blocked
+                    is not None
+                ),
+
+                "block_reason": (
+                    blocked.reason
+                    if blocked
+                    else None
+                ),
+
+                "blocked_at": (
+                    format_datetime(
+                        blocked.blocked_at
+                    )
+                    if blocked
+                    else None
+                ),
+
+                "expires_at": (
+                    format_datetime(
+                        blocked.expires_at
+                    )
+                    if blocked
+                    else None
+                ),
+
+                "remaining_seconds": (
+                    remaining_seconds
+                ),
+
+                "remaining_text": (
+                    format_remaining_time(
+                        remaining_seconds
+                    )
+                    if blocked
+                    else "-"
+                ),
             })
 
         return events
 
 
-    # =========================================================
+    # =====================================================
     # THỐNG KÊ THEO LOẠI TẤN CÔNG
-    # =========================================================
+    # =====================================================
 
-    async def get_attack_statistics(self):
-        """
-        Thống kê số lượng, số lần block
-        và Risk Score trung bình theo loại tấn công.
-        """
-
+    async def get_attack_statistics(
+        self
+    ):
         async with AsyncSessionLocal() as db:
+
             result = await db.execute(
                 select(
                     SecurityEvent.attack_type,
@@ -323,9 +849,9 @@ class SecurityService:
                             (
                                 SecurityEvent.action
                                 == "BLOCK",
-                                1
+                                1,
                             ),
-                            else_=0
+                            else_=0,
                         )
                     ).label(
                         "blocked"
@@ -335,7 +861,13 @@ class SecurityService:
                         SecurityEvent.risk_score
                     ).label(
                         "average_risk"
-                    )
+                    ),
+
+                    func.max(
+                        SecurityEvent.risk_score
+                    ).label(
+                        "max_risk"
+                    ),
                 )
                 .group_by(
                     SecurityEvent.attack_type
@@ -347,61 +879,95 @@ class SecurityService:
                 )
             )
 
-            rows = result.all()
+            rows = (
+                result.all()
+            )
 
         statistics = []
 
         for row in rows:
+
+            attack_type_code = getattr(
+                row.attack_type,
+                "value",
+                row.attack_type,
+            )
+
             statistics.append({
                 "attack_type": (
-                    self.get_attack_display_name(
-                        row.attack_type
+                    self
+                    .get_attack_display_name(
+                        attack_type_code
                     )
                 ),
 
                 "attack_type_code": (
-                    row.attack_type
+                    attack_type_code
                 ),
 
-                "count": row.count,
+                "count": (
+                    row.count
+                ),
 
-                "blocked": row.blocked or 0,
+                "blocked": (
+                    row.blocked
+                    or 0
+                ),
 
                 "average_risk": round(
                     float(
-                        row.average_risk or 0
+                        row.average_risk
+                        or 0
                     ),
-                    1
-                )
+                    1,
+                ),
+
+                "max_risk": (
+                    row.max_risk
+                    or 0
+                ),
             })
 
         return statistics
 
 
-    # =========================================================
-    # CHUYỂN ENUM SANG TÊN HIỂN THỊ
-    # =========================================================
+    # =====================================================
+    # DISPLAY NAME
+    # =====================================================
 
     def get_attack_display_name(
         self,
-        attack_type: str
+        attack_type: str,
     ):
-        """
-        Chuyển enum PostgreSQL sang tên tiếng Việt / dễ đọc.
-        """
+        code = getattr(
+            attack_type,
+            "value",
+            attack_type,
+        )
 
         attack_names = {
-            "SQL_INJECTION": "SQL Injection",
-            "XSS": "Cross-Site Scripting (XSS)",
-            "BRUTE_FORCE": "Brute Force",
-            "API_ABUSE": "API Abuse",
-            "UNAUTHORIZED_ACCESS": "Unauthorized Access",
-            "SUSPICIOUS_REQUEST": "Yêu cầu đáng ngờ"
+            "SQL_INJECTION":
+                "SQL Injection",
+
+            "XSS":
+                "Cross-Site Scripting (XSS)",
+
+            "BRUTE_FORCE":
+                "Brute Force",
+
+            "API_ABUSE":
+                "API Abuse",
+
+            "UNAUTHORIZED_ACCESS":
+                "Unauthorized Access",
+
+            "SUSPICIOUS_REQUEST":
+                "Yêu cầu đáng ngờ",
         }
 
         return attack_names.get(
-            attack_type,
-            attack_type
+            str(code),
+            str(code),
         )
 
 

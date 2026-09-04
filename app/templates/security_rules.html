@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Quy tắc bảo mật</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, sans-serif;
+            background: #07111f;
+            color: #e5edf8;
+        }
+
+        .layout {
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 285px;
+            flex-shrink: 0;
+            padding: 25px 18px;
+            border-right: 1px solid #1d3048;
+            background: #091628;
+        }
+
+        .logo {
+            display: flex;
+            gap: 13px;
+            align-items: center;
+            padding: 0 7px 28px;
+        }
+
+        .logo-icon {
+            width: 47px;
+            height: 47px;
+            border-radius: 14px;
+            background: #2f6df6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 21px;
+        }
+
+        .logo-title {
+            font-weight: 900;
+            color: white;
+        }
+
+        .logo-sub {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #7f98b8;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: #9eb2cd;
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .nav a:hover {
+            background: #10233b;
+            color: white;
+        }
+
+        .nav a.active {
+            background: #2d66e8;
+            color: white;
+        }
+
+        main {
+            flex: 1;
+            padding: 38px 34px 70px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #7f98b8;
+            margin-top: 8px;
+            line-height: 1.6;
+        }
+
+        .monitor {
+            border: 1px solid #18583f;
+            background: #09291e;
+            color: #78f0ae;
+            border-radius: 11px;
+            padding: 11px 16px;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .info {
+            margin-top: 26px;
+            padding: 17px 20px;
+            border-radius: 15px;
+            border: 1px solid #224269;
+            background: #0d2038;
+            color: #93b7e8;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .table-box {
+            margin-top: 23px;
+            border: 1px solid #1e344f;
+            border-radius: 18px;
+            overflow: hidden;
+            background: #0d1a2c;
+        }
+
+        .table-head {
+            padding: 22px;
+            border-bottom: 1px solid #1e344f;
+        }
+
+        .table-head h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .table-head p {
+            margin: 7px 0 0;
+            color: #7990ad;
+            font-size: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 14px 18px;
+            font-size: 11px;
+            color: #7089a8;
+            text-transform: uppercase;
+            border-bottom: 1px solid #1e344f;
+        }
+
+        td {
+            padding: 17px 18px;
+            border-bottom: 1px solid #172a42;
+            vertical-align: top;
+            font-size: 13px;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #102038;
+        }
+
+        .rule-name {
+            font-weight: 900;
+            color: white;
+        }
+
+        .code {
+            margin-top: 5px;
+            color: #6e88a9;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .description {
+            color: #849ab5;
+            line-height: 1.55;
+            max-width: 300px;
+        }
+
+        .risk {
+            color: #ffb44d;
+            font-weight: 900;
+        }
+
+        .action {
+            display: inline-block;
+            border-radius: 8px;
+            padding: 6px 9px;
+            background: rgba(239, 68, 68, .13);
+            color: #ff7676;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .enabled {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            color: #69eca2;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .enabled::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 10px #22c55e;
+        }
+
+        @media(max-width: 950px) {
+            .sidebar {
+                display: none;
+            }
+
+            main {
+                padding: 25px 16px;
+            }
+
+            .table-box {
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 1000px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            <div class="logo-icon">♢</div>
+
+            <div>
+                <div class="logo-title">
+                    Security Tool
+                </div>
+
+                <div class="logo-sub">
+                    Giám sát bảo mật
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <a href="/">
+                ▦ &nbsp; Bảng điều khiển
+            </a>
+
+            <a href="/su-kien-bao-mat">
+                ⚠ &nbsp; Sự kiện bảo mật
+            </a>
+
+            <a href="/thong-ke-tan-cong">
+                ▥ &nbsp; Thống kê tấn công
+            </a>
+
+            <a href="/ip-bi-chan">
+                ⦸ &nbsp; Danh sách IP bị chặn
+            </a>
+
+            <a
+                href="/quy-tac-bao-mat"
+                class="active"
+            >
+                ⚙ &nbsp; Quy tắc bảo mật
+            </a>
+
+            <a href="/cai-dat">
+                ☰ &nbsp; Cài đặt
+            </a>
+        </nav>
+
+    </aside>
+
+
+    <main>
+
+        <div class="header">
+
+            <div>
+                <h1>
+                    Quy tắc bảo mật
+                </h1>
+
+                <div class="subtitle">
+                    Danh sách các lớp bảo vệ đang được
+                    Security Gateway áp dụng cho website.
+                </div>
+            </div>
+
+            <div class="monitor">
+                ● Giám sát đang hoạt động
+            </div>
+
+        </div>
+
+
+        <div class="info">
+            Các quy tắc hiện được quản lý từ biến môi trường
+            và mã nguồn Security Tool. Trang này đang ở chế độ
+            <strong>chỉ xem</strong> để tránh thay đổi cấu hình
+            production ngoài ý muốn.
+        </div>
+
+
+        <div class="table-box">
+
+            <div class="table-head">
+                <h2>
+                    Danh sách quy tắc
+                </h2>
+
+                <p>
+                    Detector, ngưỡng phát hiện và hành động xử lý.
+                </p>
+            </div>
+
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Quy tắc</th>
+                        <th>Loại</th>
+                        <th>Ngưỡng</th>
+                        <th>Risk</th>
+                        <th>HTTP</th>
+                        <th>Hành động</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                {% for rule in rules %}
+
+                    <tr>
+
+                        <td>
+                            <div class="rule-name">
+                                {{ rule.name }}
+                            </div>
+
+                            <div class="code">
+                                {{ rule.code }}
+                            </div>
+                        </td>
+
+
+                        <td>
+                            {{ rule.category }}
+                        </td>
+
+
+                        <td>
+                            <div>
+                                {{ rule.threshold }}
+                            </div>
+
+                            <div class="description">
+                                {{ rule.description }}
+                            </div>
+                        </td>
+
+
+                        <td>
+                            <span class="risk">
+                                {{ rule.risk_score }}
+                            </span>
+                        </td>
+
+
+                        <td>
+                            {{ rule.http_status }}
+                        </td>
+
+
+                        <td>
+                            <span class="action">
+                                {{ rule.action }}
+                            </span>
+                        </td>
+
+
+                        <td>
+                            {% if rule.status %}
+                                <span class="enabled">
+                                    Đang bật
+                                </span>
+                            {% else %}
+                                Tắt
+                            {% endif %}
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>

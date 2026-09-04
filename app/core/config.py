@@ -66,7 +66,7 @@ class Settings:
     RATE_LIMIT_REQUESTS = int(
         os.getenv(
             "RATE_LIMIT_REQUESTS",
-            "30",
+            "60",
         )
     )
 
@@ -80,8 +80,32 @@ class Settings:
     RATE_LIMIT_RISK_SCORE = int(
         os.getenv(
             "RATE_LIMIT_RISK_SCORE",
-            "80",
+            "60",
         )
+    )
+
+    RATE_LIMIT_READ_REQUESTS = int(
+        os.getenv("RATE_LIMIT_READ_REQUESTS", "120")
+    )
+
+    RATE_LIMIT_WRITE_REQUESTS = int(
+        os.getenv("RATE_LIMIT_WRITE_REQUESTS", "30")
+    )
+
+    RATE_LIMIT_PAYMENT_REQUESTS = int(
+        os.getenv("RATE_LIMIT_PAYMENT_REQUESTS", "10")
+    )
+
+    RATE_LIMIT_UPLOAD_REQUESTS = int(
+        os.getenv("RATE_LIMIT_UPLOAD_REQUESTS", "10")
+    )
+
+    API_ABUSE_MAX_STRIKES = int(
+        os.getenv("API_ABUSE_MAX_STRIKES", "3")
+    )
+
+    API_ABUSE_STRIKE_WINDOW_SECONDS = int(
+        os.getenv("API_ABUSE_STRIKE_WINDOW_SECONDS", "600")
     )
 
     # =====================================================

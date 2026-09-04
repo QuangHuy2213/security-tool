@@ -1,123 +1,1535 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thống kê tấn công</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Thống kê tấn công
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css"
+    >
+
+    <style>
+        /* =====================================================
+           ATTACK SUMMARY
+        ===================================================== */
+
+        .attack-summary-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, minmax(0, 1fr));
+
+            gap: 16px;
+
+            margin-top: 22px;
+        }
+
+
+        .attack-summary-card {
+            position: relative;
+
+            overflow: hidden;
+
+            min-height: 135px;
+
+            padding: 19px;
+
+            border: 1px solid #1e344f;
+
+            border-radius: 17px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #0e1c2f,
+                    #0b1728
+                );
+
+            transition:
+                transform .2s ease,
+                border-color .2s ease;
+        }
+
+
+        .attack-summary-card:hover {
+            transform: translateY(-2px);
+
+            border-color: #315276;
+        }
+
+
+        .attack-summary-card::after {
+            content: "";
+
+            position: absolute;
+
+            width: 100px;
+            height: 100px;
+
+            right: -40px;
+            top: -40px;
+
+            border-radius: 50%;
+
+            opacity: .12;
+        }
+
+
+        .attack-summary-card.sql::after {
+            background: #ef4444;
+        }
+
+
+        .attack-summary-card.xss::after {
+            background: #f97316;
+        }
+
+
+        .attack-summary-card.api::after {
+            background: #eab308;
+        }
+
+
+        .attack-summary-card.brute::after {
+            background: #a855f7;
+        }
+
+
+        .summary-label {
+            position: relative;
+            z-index: 1;
+
+            color: #7b92ae;
+
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+
+        .summary-value {
+            position: relative;
+            z-index: 1;
+
+            margin-top: 10px;
+
+            color: #ffffff;
+
+            font-size: 28px;
+            font-weight: 900;
+        }
+
+
+        .summary-description {
+            position: relative;
+            z-index: 1;
+
+            margin-top: 6px;
+
+            color: #627a98;
+
+            font-size: 11px;
+
+            line-height: 1.5;
+        }
+
+
+        /* =====================================================
+           ANALYSIS PANEL
+        ===================================================== */
+
+        .analysis-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+
+            gap: 18px;
+
+            margin-top: 22px;
+        }
+
+
+        .analysis-card {
+            overflow: hidden;
+
+            border: 1px solid #1e344f;
+
+            border-radius: 17px;
+
+            background: #0d1a2c;
+        }
+
+
+        .analysis-header {
+            padding: 19px 20px;
+
+            border-bottom:
+                1px solid #1e344f;
+        }
+
+
+        .analysis-header h3 {
+            margin: 0;
+
+            color: #f8fafc;
+
+            font-size: 16px;
+        }
+
+
+        .analysis-header p {
+            margin: 6px 0 0;
+
+            color: #7188a5;
+
+            font-size: 11px;
+        }
+
+
+        .analysis-row {
+            display: flex;
+
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+
+            padding: 15px 20px;
+
+            border-bottom:
+                1px solid #172a42;
+        }
+
+
+        .analysis-row:last-child {
+            border-bottom: none;
+        }
+
+
+        .analysis-label {
+            color: #9db0c7;
+
+            font-size: 12px;
+        }
+
+
+        .analysis-value {
+            color: #ffffff;
+
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+
+        .analysis-value.red {
+            color: #ff7b7b;
+        }
+
+
+        .analysis-value.orange {
+            color: #ffb45f;
+        }
+
+
+        .analysis-value.green {
+            color: #61e79b;
+        }
+
+
+        .analysis-value.blue {
+            color: #76b5ff;
+        }
+
+
+        /* =====================================================
+           TABLE
+        ===================================================== */
+
+        .statistics-table {
+            min-width: 1200px;
+        }
+
+
+        .attack-name {
+            color: #f8fafc;
+
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+
+        .attack-code {
+            margin-top: 5px;
+
+            color: #627b99;
+
+            font-family: monospace;
+
+            font-size: 10px;
+        }
+
+
+        .number-strong {
+            color: #f8fafc;
+
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+
+        .block-count {
+            color: #ff8585;
+
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+
+        /* =====================================================
+           BLOCK RATE
+        ===================================================== */
+
+        .rate-wrapper {
+            min-width: 150px;
+        }
+
+
+        .rate-top {
+            display: flex;
+
+            align-items: center;
+            justify-content: space-between;
+
+            margin-bottom: 7px;
+        }
+
+
+        .rate-value {
+            color: #d8e6f7;
+
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+
+        .rate-track {
+            width: 100%;
+            height: 7px;
+
+            overflow: hidden;
+
+            border-radius: 999px;
+
+            background: #182b43;
+        }
+
+
+        .rate-bar {
+            height: 100%;
+
+            border-radius: 999px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #2563eb,
+                    #60a5fa
+                );
+        }
+
+
+        /* =====================================================
+           CONTRIBUTION
+        ===================================================== */
+
+        .share-value {
+            color: #80baff;
+
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+
+        /* =====================================================
+           SEVERITY
+        ===================================================== */
+
+        .severity-text {
+            display: inline-flex;
+
+            padding: 5px 8px;
+
+            border-radius: 8px;
+
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+
+        .severity-critical {
+            color: #ff7b7b;
+
+            background:
+                rgba(
+                    239,
+                    68,
+                    68,
+                    .12
+                );
+        }
+
+
+        .severity-high {
+            color: #ffb45f;
+
+            background:
+                rgba(
+                    249,
+                    115,
+                    22,
+                    .12
+                );
+        }
+
+
+        .severity-medium {
+            color: #f6d365;
+
+            background:
+                rgba(
+                    234,
+                    179,
+                    8,
+                    .12
+                );
+        }
+
+
+        .severity-low {
+            color: #61e79b;
+
+            background:
+                rgba(
+                    34,
+                    197,
+                    94,
+                    .1
+                );
+        }
+
+
+        /* =====================================================
+           LEGEND
+        ===================================================== */
+
+        .legend {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 12px;
+
+            margin-top: 18px;
+
+            padding: 14px 16px;
+
+            border: 1px solid #1e344f;
+
+            border-radius: 13px;
+
+            background: #0c192a;
+        }
+
+
+        .legend-item {
+            display: flex;
+
+            align-items: center;
+
+            gap: 7px;
+
+            color: #748ca8;
+
+            font-size: 11px;
+        }
+
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+
+            border-radius: 50%;
+        }
+
+
+        .legend-dot.low {
+            background: #22c55e;
+        }
+
+
+        .legend-dot.medium {
+            background: #eab308;
+        }
+
+
+        .legend-dot.high {
+            background: #f97316;
+        }
+
+
+        .legend-dot.critical {
+            background: #ef4444;
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media(max-width: 1200px) {
+
+            .attack-summary-grid {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+            }
+
+        }
+
+
+        @media(max-width: 850px) {
+
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+
+        @media(max-width: 650px) {
+
+            .attack-summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+    </style>
 </head>
+
+
 <body>
+
+
+<!-- =========================================================
+     SIDEBAR
+========================================================= -->
+
 <aside class="sidebar">
+
     <div class="brand">
-        <div class="brand-icon">🛡</div>
-        <div>
-            <h2>Security Tool</h2>
-            <span>Giám sát bảo mật</span>
+
+        <div class="brand-icon">
+            🛡
         </div>
+
+
+        <div>
+
+            <h2>
+                Security Tool
+            </h2>
+
+            <span>
+                Giám sát bảo mật
+            </span>
+
+        </div>
+
     </div>
 
+
     <nav class="menu">
-        <a href="/"><span>▦</span> Bảng điều khiển</a>
-        <a href="/su-kien-bao-mat"><span>⚠</span> Sự kiện bảo mật</a>
-        <a href="/thong-ke-tan-cong" class="active"><span>▥</span> Thống kê tấn công</a>
-        <a href="/ip-bi-chan"><span>⊘</span> Danh sách IP bị chặn</a>
-        <a href="#"><span>⚙</span> Quy tắc bảo mật</a>
-        <a href="#"><span>☰</span> Cài đặt</a>
+
+        <a href="/">
+            <span>▦</span>
+            Bảng điều khiển
+        </a>
+
+
+        <a href="/su-kien-bao-mat">
+            <span>⚠</span>
+            Sự kiện bảo mật
+        </a>
+
+
+        <a
+            href="/thong-ke-tan-cong"
+            class="active"
+        >
+            <span>▥</span>
+            Thống kê tấn công
+        </a>
+
+
+        <a href="/ip-bi-chan">
+            <span>⊘</span>
+            Danh sách IP bị chặn
+        </a>
+
+
+        <a href="/quy-tac-bao-mat">
+            <span>⚙</span>
+            Quy tắc bảo mật
+        </a>
+
+
+        <a href="/cai-dat">
+            <span>☰</span>
+            Cài đặt
+        </a>
+
     </nav>
+
+
+    <div class="sidebar-status">
+
+        <div class="status-line">
+
+            <span class="status-dot"></span>
+
+            <strong>
+                Hệ thống hoạt động
+            </strong>
+
+        </div>
+
+
+        <p>
+            Security Gateway đang thống kê
+            và phân loại các mối đe dọa.
+        </p>
+
+    </div>
+
 </aside>
 
+
+<!-- =========================================================
+     MAIN
+========================================================= -->
+
 <main class="main-content">
+
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
     <header class="topbar">
+
         <div>
-            <h1>Thống kê tấn công</h1>
-            <p>Phân tích các loại tấn công mà Security Tool đã phát hiện.</p>
+
+            <h1>
+                Thống kê tấn công
+            </h1>
+
+            <p>
+                Phân tích loại tấn công, tỷ lệ chặn
+                và mức độ rủi ro của các Security Event
+                được hệ thống ghi nhận.
+            </p>
+
         </div>
+
+
+        <div class="protection-status">
+
+            <span class="status-dot"></span>
+
+            Phân tích đang hoạt động
+
+        </div>
+
     </header>
 
+
+    <!-- =====================================================
+         MAIN STATS
+    ====================================================== -->
+
     <section class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-top"><span>Tổng request</span></div>
-            <strong>{{ stats.requests }}</strong>
-            <p>Request đã được phân tích</p>
-        </div>
+
 
         <div class="stat-card">
-            <div class="stat-top"><span>Tổng tấn công</span></div>
-            <strong>{{ stats.attacks }}</strong>
-            <p>Tổng số hành vi đáng ngờ</p>
+
+            <div class="stat-top">
+
+                <span>
+                    Tổng request
+                </span>
+
+                <div class="stat-icon blue">
+                    ↗
+                </div>
+
+            </div>
+
+            <strong>
+                {{ stats.requests }}
+            </strong>
+
+            <p>
+                Request đã đi qua Security Gateway
+            </p>
+
         </div>
 
-        <div class="stat-card">
-            <div class="stat-top"><span>Đã chặn</span></div>
-            <strong>{{ stats.blocked }}</strong>
-            <p>Số request bị Security Gateway chặn</p>
-        </div>
 
         <div class="stat-card">
-            <div class="stat-top"><span>Nghiêm trọng</span></div>
-            <strong>{{ stats.critical }}</strong>
-            <p>Các mối đe dọa Risk Score ≥ 90</p>
+
+            <div class="stat-top">
+
+                <span>
+                    Tổng tấn công
+                </span>
+
+                <div class="stat-icon orange">
+                    ⚠
+                </div>
+
+            </div>
+
+            <strong>
+                {{ stats.attacks }}
+            </strong>
+
+            <p>
+                Security Event đã được ghi nhận
+            </p>
+
         </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-top">
+
+                <span>
+                    Đã chặn
+                </span>
+
+                <div class="stat-icon red">
+                    ⊘
+                </div>
+
+            </div>
+
+            <strong>
+                {{ stats.blocked }}
+            </strong>
+
+            <p>
+                Event có action BLOCK
+            </p>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-top">
+
+                <span>
+                    Client đang khóa
+                </span>
+
+                <div class="stat-icon purple">
+                    !
+                </div>
+
+            </div>
+
+            <strong>
+                {{ stats.active_blocks }}
+            </strong>
+
+            <p>
+                Client/IP vẫn còn hiệu lực block
+            </p>
+
+        </div>
+
     </section>
 
-    <section class="panel">
-        <div class="panel-header">
-            <div>
-                <h2>Phân loại tấn công</h2>
-                <p>Thống kê theo loại tấn công được phát hiện.</p>
+
+    <!-- =====================================================
+         ATTACK TYPE
+    ====================================================== -->
+
+    <section class="attack-summary-grid">
+
+
+        <!-- SQL -->
+
+        <div class="attack-summary-card sql">
+
+            <div class="summary-label">
+                SQL Injection
             </div>
+
+            <div class="summary-value">
+                {{ stats.sql_injection }}
+            </div>
+
+            <div class="summary-description">
+                Request có dấu hiệu can thiệp
+                câu truy vấn SQL.
+            </div>
+
         </div>
+
+
+        <!-- XSS -->
+
+        <div class="attack-summary-card xss">
+
+            <div class="summary-label">
+                Cross-Site Scripting
+            </div>
+
+            <div class="summary-value">
+                {{ stats.xss }}
+            </div>
+
+            <div class="summary-description">
+                Script hoặc nội dung HTML
+                nguy hiểm được phát hiện.
+            </div>
+
+        </div>
+
+
+        <!-- API -->
+
+        <div class="attack-summary-card api">
+
+            <div class="summary-label">
+                API Abuse
+            </div>
+
+            <div class="summary-value">
+                {{ stats.api_abuse }}
+            </div>
+
+            <div class="summary-description">
+                Client gửi request vượt ngưỡng
+                Rate Limit cho phép.
+            </div>
+
+        </div>
+
+
+        <!-- BRUTE -->
+
+        <div class="attack-summary-card brute">
+
+            <div class="summary-label">
+                Brute Force
+            </div>
+
+            <div class="summary-value">
+                {{ stats.brute_force }}
+            </div>
+
+            <div class="summary-description">
+                Đăng nhập thất bại nhiều lần
+                vượt ngưỡng bảo vệ.
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         ANALYSIS
+    ====================================================== -->
+
+    <section class="analysis-grid">
+
+
+        <!-- OVERVIEW -->
+
+        <div class="analysis-card">
+
+            <div class="analysis-header">
+
+                <h3>
+                    Tổng quan xử lý
+                </h3>
+
+                <p>
+                    Hiệu quả xử lý các Security Event.
+                </p>
+
+            </div>
+
+
+            <div class="analysis-row">
+
+                <span class="analysis-label">
+                    Security Event
+                </span>
+
+                <strong class="analysis-value blue">
+                    {{ stats.attacks }}
+                </strong>
+
+            </div>
+
+
+            <div class="analysis-row">
+
+                <span class="analysis-label">
+                    Event đã BLOCK
+                </span>
+
+                <strong class="analysis-value red">
+                    {{ stats.blocked }}
+                </strong>
+
+            </div>
+
+
+            <div class="analysis-row">
+
+                <span class="analysis-label">
+                    Event Critical
+                </span>
+
+                <strong class="analysis-value orange">
+                    {{ stats.critical }}
+                </strong>
+
+            </div>
+
+
+            <div class="analysis-row">
+
+                <span class="analysis-label">
+                    Client đang bị khóa
+                </span>
+
+                <strong class="analysis-value red">
+                    {{ stats.active_blocks }}
+                </strong>
+
+            </div>
+
+
+            <div class="analysis-row">
+
+                <span class="analysis-label">
+                    Tỷ lệ request có dấu hiệu tấn công
+                </span>
+
+                <strong class="analysis-value">
+
+                    {% if stats.requests > 0 %}
+
+                        {{
+                            (
+                                (
+                                    stats.attacks
+                                    /
+                                    stats.requests
+                                )
+                                * 100
+                            )
+                            | round(2)
+                        }}%
+
+                    {% else %}
+
+                        0%
+
+                    {% endif %}
+
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- RISK -->
+
+        <div class="analysis-card">
+
+            <div class="analysis-header">
+
+                <h3>
+                    Phân loại Risk Score
+                </h3>
+
+                <p>
+                    Ngưỡng đánh giá mức độ nguy hiểm.
+                </p>
+
+            </div>
+
+
+            <div class="analysis-row">
+
+                <span class="analysis-label">
+                    Bình thường
+                </span>
+
+                <strong class="analysis-value green">
+                    0 - 29
+                </strong>
+
+            </div>
+
+
+            <div class="analysis-row">
+
+                <span class="analysis-label">
+                    Cảnh báo
+                </span>
+
+                <strong class="analysis-value">
+                    30 - 59
+                </strong>
+
+            </div>
+
+
+            <div class="analysis-row">
+
+                <span class="analysis-label">
+                    Nguy hiểm
+                </span>
+
+                <strong class="analysis-value orange">
+                    60 - 89
+                </strong>
+
+            </div>
+
+
+            <div class="analysis-row">
+
+                <span class="analysis-label">
+                    Nghiêm trọng
+                </span>
+
+                <strong class="analysis-value red">
+                    90 - 100
+                </strong>
+
+            </div>
+
+
+            <div class="analysis-row">
+
+                <span class="analysis-label">
+                    Critical Event hiện có
+                </span>
+
+                <strong class="analysis-value red">
+                    {{ stats.critical }}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         STATISTICS TABLE
+    ====================================================== -->
+
+    <section
+        class="panel"
+        style="margin-top: 22px;"
+    >
+
+        <div class="panel-header">
+
+            <div>
+
+                <h2>
+                    Phân tích theo loại tấn công
+                </h2>
+
+                <p>
+                    Số lần phát hiện, số request bị chặn,
+                    Risk trung bình, Risk cao nhất
+                    và tỷ lệ block.
+                </p>
+
+            </div>
+
+
+            <button
+                class="refresh-btn"
+                onclick="window.location.reload()"
+            >
+                ↻ Làm mới
+            </button>
+
+        </div>
+
 
         <div class="table-wrapper">
-            <table>
+
+            <table class="statistics-table">
+
                 <thead>
+
                 <tr>
-                    <th>LOẠI TẤN CÔNG</th>
-                    <th>SỐ LƯỢNG</th>
-                    <th>ĐÃ CHẶN</th>
-                    <th>RỦI RO TRUNG BÌNH</th>
-                    <th>TỶ LỆ CHẶN</th>
+
+                    <th>
+                        LOẠI TẤN CÔNG
+                    </th>
+
+                    <th>
+                        PHÁT HIỆN
+                    </th>
+
+                    <th>
+                        ĐÃ CHẶN
+                    </th>
+
+                    <th>
+                        RISK TRUNG BÌNH
+                    </th>
+
+                    <th>
+                        RISK CAO NHẤT
+                    </th>
+
+                    <th>
+                        TỶ LỆ CHẶN
+                    </th>
+
+                    <th>
+                        TỶ TRỌNG
+                    </th>
+
                 </tr>
+
                 </thead>
 
+
                 <tbody>
+
+
                 {% if statistics %}
+
+
                     {% for item in statistics %}
+
+
                     <tr>
-                        <td><strong>{{ item.attack_type }}</strong></td>
-                        <td>{{ item.count }}</td>
-                        <td>{{ item.blocked }}</td>
+
+
+                        <!-- ATTACK TYPE -->
+
                         <td>
+
+                            <div class="attack-name">
+
+                                {{ item.attack_type }}
+
+                            </div>
+
+
+                            <div class="attack-code">
+
+                                {{ item.attack_type_code }}
+
+                            </div>
+
+                        </td>
+
+
+                        <!-- COUNT -->
+
+                        <td>
+
+                            <span class="number-strong">
+
+                                {{ item.count }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- BLOCKED -->
+
+                        <td>
+
+                            <span class="block-count">
+
+                                {{ item.blocked }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- AVERAGE RISK -->
+
+                        <td>
+
                             {% if item.average_risk >= 90 %}
-                                <span class="risk-badge risk-critical">{{ item.average_risk }}</span>
+
+                                <span
+                                    class="
+                                        risk-badge
+                                        risk-critical
+                                    "
+                                >
+
+                                    {{ item.average_risk }}
+
+                                </span>
+
+
                             {% elif item.average_risk >= 60 %}
-                                <span class="risk-badge risk-high">{{ item.average_risk }}</span>
+
+                                <span
+                                    class="
+                                        risk-badge
+                                        risk-high
+                                    "
+                                >
+
+                                    {{ item.average_risk }}
+
+                                </span>
+
+
+                            {% elif item.average_risk >= 30 %}
+
+                                <span
+                                    class="
+                                        risk-badge
+                                        risk-medium
+                                    "
+                                >
+
+                                    {{ item.average_risk }}
+
+                                </span>
+
+
                             {% else %}
-                                <span class="risk-badge risk-medium">{{ item.average_risk }}</span>
+
+                                <span
+                                    class="
+                                        risk-badge
+                                        risk-low
+                                    "
+                                >
+
+                                    {{ item.average_risk }}
+
+                                </span>
+
                             {% endif %}
+
                         </td>
+
+
+                        <!-- MAX RISK -->
+
                         <td>
-                            {% if item.count > 0 %}
-                                {{ ((item.blocked / item.count) * 100)|round(1) }}%
+
+                            {% if item.max_risk >= 90 %}
+
+                                <span
+                                    class="
+                                        severity-text
+                                        severity-critical
+                                    "
+                                >
+
+                                    {{ item.max_risk }}/100
+
+                                </span>
+
+
+                            {% elif item.max_risk >= 60 %}
+
+                                <span
+                                    class="
+                                        severity-text
+                                        severity-high
+                                    "
+                                >
+
+                                    {{ item.max_risk }}/100
+
+                                </span>
+
+
+                            {% elif item.max_risk >= 30 %}
+
+                                <span
+                                    class="
+                                        severity-text
+                                        severity-medium
+                                    "
+                                >
+
+                                    {{ item.max_risk }}/100
+
+                                </span>
+
+
                             {% else %}
-                                0%
+
+                                <span
+                                    class="
+                                        severity-text
+                                        severity-low
+                                    "
+                                >
+
+                                    {{ item.max_risk }}/100
+
+                                </span>
+
                             {% endif %}
+
                         </td>
+
+
+                        <!-- BLOCK RATE -->
+
+                        <td>
+
+                            {% if item.count > 0 %}
+
+                                {% set block_rate =
+                                    (
+                                        item.blocked
+                                        /
+                                        item.count
+                                        *
+                                        100
+                                    )
+                                %}
+
+                            {% else %}
+
+                                {% set block_rate = 0 %}
+
+                            {% endif %}
+
+
+                            <div class="rate-wrapper">
+
+                                <div class="rate-top">
+
+                                    <span class="rate-value">
+
+                                        {{
+                                            block_rate
+                                            | round(1)
+                                        }}%
+
+                                    </span>
+
+                                </div>
+
+
+                                <div class="rate-track">
+
+                                    <div
+                                        class="rate-bar"
+
+                                        style="
+                                            width:
+                                            {{
+                                                block_rate
+                                                | round(1)
+                                            }}%;
+                                        "
+                                    ></div>
+
+                                </div>
+
+                            </div>
+
+                        </td>
+
+
+                        <!-- CONTRIBUTION -->
+
+                        <td>
+
+                            {% if stats.attacks > 0 %}
+
+                                <span class="share-value">
+
+                                    {{
+                                        (
+                                            (
+                                                item.count
+                                                /
+                                                stats.attacks
+                                            )
+                                            * 100
+                                        )
+                                        | round(1)
+                                    }}%
+
+                                </span>
+
+                            {% else %}
+
+                                <span class="share-value">
+
+                                    0%
+
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
                     </tr>
+
+
                     {% endfor %}
+
+
                 {% else %}
+
+
                     <tr>
-                        <td colspan="5" class="empty-state">
-                            <div class="empty-shield">▥</div>
-                            <strong>Chưa có dữ liệu thống kê</strong>
-                            <p>Khi phát hiện tấn công, số liệu sẽ xuất hiện ở đây.</p>
+
+                        <td
+                            colspan="7"
+                            class="empty-state"
+                        >
+
+                            <div class="empty-shield">
+                                ▥
+                            </div>
+
+
+                            <strong>
+                                Chưa có dữ liệu thống kê
+                            </strong>
+
+
+                            <p>
+                                Khi Security Tool phát hiện
+                                hành vi tấn công,
+                                số liệu sẽ xuất hiện tại đây.
+                            </p>
+
                         </td>
+
                     </tr>
+
+
                 {% endif %}
+
+
                 </tbody>
+
             </table>
+
         </div>
+
     </section>
+
+
+    <!-- =====================================================
+         LEGEND
+    ====================================================== -->
+
+    <section class="legend">
+
+        <div class="legend-item">
+
+            <span class="legend-dot low"></span>
+
+            LOW
+            0 - 29
+
+        </div>
+
+
+        <div class="legend-item">
+
+            <span class="legend-dot medium"></span>
+
+            MEDIUM
+            30 - 59
+
+        </div>
+
+
+        <div class="legend-item">
+
+            <span class="legend-dot high"></span>
+
+            HIGH
+            60 - 89
+
+        </div>
+
+
+        <div class="legend-item">
+
+            <span class="legend-dot critical"></span>
+
+            CRITICAL
+            90 - 100
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
+
+    <footer class="footer">
+
+        Security Attack Analytics
+        ·
+        Security Gateway
+        ·
+        PostgreSQL
+
+    </footer>
+
+
 </main>
+
+
 </body>
+
 </html>

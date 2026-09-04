@@ -1,253 +1,1605 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danh sách IP bị chặn</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Danh sách Client/IP bị chặn</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css"
+    >
+
+    <style>
+        /* =====================================================
+           PAGE EXTRA STYLE
+        ===================================================== */
+
+        .blocked-summary {
+            display: grid;
+            grid-template-columns:
+                repeat(4, minmax(0, 1fr));
+
+            gap: 16px;
+            margin-top: 22px;
+        }
+
+        .blocked-summary-card {
+            position: relative;
+            overflow: hidden;
+
+            border: 1px solid #1e344f;
+            border-radius: 17px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #0e1c2f,
+                    #0b1728
+                );
+
+            padding: 18px;
+        }
+
+        .blocked-summary-card::after {
+            content: "";
+
+            position: absolute;
+
+            width: 90px;
+            height: 90px;
+
+            right: -35px;
+            top: -35px;
+
+            border-radius: 50%;
+
+            background:
+                rgba(59, 130, 246, .08);
+        }
+
+        .summary-label {
+            position: relative;
+            z-index: 1;
+
+            color: #7890af;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .summary-value {
+            position: relative;
+            z-index: 1;
+
+            margin-top: 9px;
+
+            color: #ffffff;
+
+            font-size: 25px;
+            font-weight: 900;
+        }
+
+        .summary-desc {
+            position: relative;
+            z-index: 1;
+
+            margin-top: 5px;
+
+            color: #637b98;
+
+            font-size: 11px;
+            line-height: 1.45;
+        }
+
+
+        /* =====================================================
+           FILTER
+        ===================================================== */
+
+        .blocked-filter {
+            margin-top: 22px;
+
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+
+            gap: 10px;
+
+            padding: 14px;
+
+            border: 1px solid #1e344f;
+            border-radius: 15px;
+
+            background: #0d1a2c;
+        }
+
+        .blocked-search {
+            flex: 1;
+            min-width: 260px;
+
+            padding: 11px 13px;
+
+            color: #e5edf7;
+            background: #081524;
+
+            border: 1px solid #284260;
+            border-radius: 10px;
+
+            outline: none;
+        }
+
+        .blocked-search:focus {
+            border-color: #3978dc;
+        }
+
+        .filter-count {
+            color: #7890af;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+
+        /* =====================================================
+           TABLE
+        ===================================================== */
+
+        .blocked-table {
+            min-width: 1500px;
+        }
+
+        .ip-cell {
+            min-width: 145px;
+        }
+
+        .client-cell {
+            min-width: 180px;
+        }
+
+        .client-key {
+            display: inline-block;
+
+            max-width: 165px;
+
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+
+            color: #80baff;
+
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .client-label {
+            margin-top: 5px;
+
+            color: #5f7896;
+
+            font-size: 10px;
+        }
+
+
+        /* =====================================================
+           VIOLATION
+        ===================================================== */
+
+        .violation-count {
+            font-size: 13px;
+            font-weight: 900;
+
+            color: #f8fafc;
+        }
+
+        .violation-note {
+            display: block;
+
+            margin-top: 5px;
+
+            color: #768ca7;
+
+            font-size: 10px;
+        }
+
+
+        /* =====================================================
+           REASON
+        ===================================================== */
+
+        .reason-cell {
+            min-width: 280px;
+            max-width: 320px;
+        }
+
+        .reason-text {
+            color: #a2b2c7;
+
+            font-size: 11px;
+            line-height: 1.55;
+        }
+
+
+        /* =====================================================
+           DATE
+        ===================================================== */
+
+        .date-cell {
+            min-width: 160px;
+
+            color: #9ab0ca;
+
+            font-size: 11px;
+            line-height: 1.7;
+        }
+
+        .date-label {
+            color: #637b98;
+
+            font-size: 9px;
+            font-weight: 800;
+
+            text-transform: uppercase;
+        }
+
+
+        /* =====================================================
+           REMAINING
+        ===================================================== */
+
+        .remaining-box {
+            min-width: 150px;
+        }
+
+        .remaining-value {
+            color: #ffb75f;
+
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .remaining-seconds {
+            margin-top: 5px;
+
+            color: #627c9b;
+
+            font-size: 10px;
+        }
+
+
+        /* =====================================================
+           STATUS
+        ===================================================== */
+
+        .client-blocked-status {
+            display: inline-flex;
+            align-items: center;
+
+            gap: 6px;
+
+            padding: 7px 10px;
+
+            border: 1px solid rgba(
+                239,
+                68,
+                68,
+                .25
+            );
+
+            border-radius: 999px;
+
+            color: #ff8585;
+
+            background: rgba(
+                239,
+                68,
+                68,
+                .11
+            );
+
+            font-size: 10px;
+            font-weight: 900;
+
+            white-space: nowrap;
+        }
+
+        .client-blocked-status::before {
+            content: "";
+
+            width: 7px;
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: #ef4444;
+
+            box-shadow:
+                0 0 8px rgba(
+                    239,
+                    68,
+                    68,
+                    .8
+                );
+        }
+
+
+        /* =====================================================
+           UNBLOCK
+        ===================================================== */
+
+        .unblock-btn {
+            border: 1px solid #34577c;
+            border-radius: 9px;
+
+            background: #102945;
+            color: #8ec1ff;
+
+            padding: 8px 11px;
+
+            cursor: pointer;
+
+            font-size: 10px;
+            font-weight: 900;
+
+            transition: .2s ease;
+
+            white-space: nowrap;
+        }
+
+        .unblock-btn:hover {
+            background: #17416e;
+            color: #ffffff;
+
+            transform: translateY(-1px);
+        }
+
+        .unblock-note {
+            margin-top: 6px;
+
+            color: #5d7593;
+
+            font-size: 9px;
+        }
+
+
+        /* =====================================================
+           INFO BOX
+        ===================================================== */
+
+        .security-flow {
+            margin-top: 22px;
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+
+            gap: 18px;
+        }
+
+        .security-flow-card {
+            border: 1px solid #1e344f;
+            border-radius: 17px;
+
+            background: #0d1a2c;
+
+            overflow: hidden;
+        }
+
+        .flow-header {
+            padding: 19px 20px;
+
+            border-bottom:
+                1px solid #1e344f;
+        }
+
+        .flow-header h3 {
+            margin: 0;
+
+            font-size: 16px;
+
+            color: #f8fafc;
+        }
+
+        .flow-header p {
+            margin: 6px 0 0;
+
+            color: #7188a5;
+
+            font-size: 11px;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+
+            padding: 15px 20px;
+
+            border-bottom:
+                1px solid #172a42;
+        }
+
+        .flow-step:last-child {
+            border-bottom: none;
+        }
+
+        .flow-step span:first-child {
+            color: #9db0c7;
+
+            font-size: 12px;
+        }
+
+        .flow-safe {
+            color: #5ae495;
+
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .flow-watch {
+            color: #f3c969;
+
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .flow-block {
+            color: #ff7979;
+
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+
+        /* =====================================================
+           NO RESULT
+        ===================================================== */
+
+        .hidden-block-row {
+            display: none;
+        }
+
+        #filterEmpty {
+            display: none;
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media(max-width: 1200px) {
+
+            .blocked-summary {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+            }
+
+        }
+
+        @media(max-width: 800px) {
+
+            .blocked-summary {
+                grid-template-columns:
+                    1fr;
+            }
+
+            .security-flow {
+                grid-template-columns:
+                    1fr;
+            }
+
+            .blocked-filter {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .blocked-search {
+                width: 100%;
+            }
+
+        }
+    </style>
 </head>
+
+
 <body>
 
+
+<!-- =========================================================
+     SIDEBAR
+========================================================= -->
+
 <aside class="sidebar">
+
     <div class="brand">
-        <div class="brand-icon">🛡</div>
-        <div>
-            <h2>Security Tool</h2>
-            <span>Giám sát bảo mật</span>
+
+        <div class="brand-icon">
+            🛡
         </div>
+
+        <div>
+
+            <h2>
+                Security Tool
+            </h2>
+
+            <span>
+                Giám sát bảo mật
+            </span>
+
+        </div>
+
     </div>
+
 
     <nav class="menu">
-        <a href="/"><span>▦</span> Bảng điều khiển</a>
-        <a href="/su-kien-bao-mat"><span>⚠</span> Sự kiện bảo mật</a>
-        <a href="/thong-ke-tan-cong"><span>▥</span> Thống kê tấn công</a>
-        <a href="/ip-bi-chan" class="active"><span>⊘</span> Danh sách IP bị chặn</a>
-        <a href="#"><span>⚙</span> Quy tắc bảo mật</a>
-        <a href="#"><span>☰</span> Cài đặt</a>
+
+        <a href="/">
+            <span>▦</span>
+            Bảng điều khiển
+        </a>
+
+
+        <a href="/su-kien-bao-mat">
+            <span>⚠</span>
+            Sự kiện bảo mật
+        </a>
+
+
+        <a href="/thong-ke-tan-cong">
+            <span>▥</span>
+            Thống kê tấn công
+        </a>
+
+
+        <a
+            href="/ip-bi-chan"
+            class="active"
+        >
+            <span>⊘</span>
+            Danh sách IP bị chặn
+        </a>
+
+
+        <a href="/quy-tac-bao-mat">
+            <span>⚙</span>
+            Quy tắc bảo mật
+        </a>
+
+
+        <a href="/cai-dat">
+            <span>☰</span>
+            Cài đặt
+        </a>
+
     </nav>
 
+
     <div class="sidebar-status">
+
         <div class="status-line">
+
             <span class="status-dot"></span>
-            <strong>Hệ thống hoạt động</strong>
+
+            <strong>
+                Hệ thống hoạt động
+            </strong>
+
         </div>
-        <p>Security Gateway đang giám sát và ngăn chặn các IP có hành vi bất thường.</p>
+
+        <p>
+            Security Gateway đang quản lý
+            Client và IP có hành vi bất thường.
+        </p>
+
     </div>
+
 </aside>
+
+
+<!-- =========================================================
+     MAIN
+========================================================= -->
 
 <main class="main-content">
 
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
     <header class="topbar">
+
         <div>
-            <h1>Danh sách IP bị chặn</h1>
-            <p>Quản lý các địa chỉ IP bị Security Tool ngăn truy cập do có hành vi đáng ngờ hoặc vi phạm nhiều lần.</p>
+
+            <h1>
+                Danh sách Client / IP bị chặn
+            </h1>
+
+            <p>
+                Quản lý các client đang bị Security Tool
+                từ chối truy cập do vi phạm quy tắc bảo mật
+                hoặc có Risk Score quá cao.
+            </p>
+
         </div>
+
 
         <div class="protection-status">
+
             <span class="status-dot"></span>
-            {{ blocked_ips|length }} IP đang bị chặn
+
+            {{ blocked_ips|length }}
+            client đang bị chặn
+
         </div>
+
     </header>
 
+
+    <!-- =====================================================
+         STATS
+    ====================================================== -->
+
     <section class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-top">
-                <span>IP đang bị chặn</span>
-                <div class="stat-icon red">⊘</div>
-            </div>
-            <strong>{{ blocked_ips|length }}</strong>
-            <p>Tổng số địa chỉ IP hiện đang bị khóa.</p>
-        </div>
 
         <div class="stat-card">
+
             <div class="stat-top">
-                <span>Trạng thái bảo vệ</span>
-                <div class="stat-icon blue">🛡</div>
+
+                <span>
+                    Client đang bị chặn
+                </span>
+
+                <div class="stat-icon red">
+                    ⊘
+                </div>
+
             </div>
-            <strong style="font-size: 20px;">Đang hoạt động</strong>
-            <p>Gateway đang kiểm tra IP trước khi chuyển request tới backend.</p>
+
+            <strong>
+                {{ stats.active_blocks }}
+            </strong>
+
+            <p>
+                Client/IP hiện chưa hết thời gian block.
+            </p>
+
         </div>
 
-        <div class="stat-card">
-            <div class="stat-top">
-                <span>Ngưỡng tự động chặn</span>
-                <div class="stat-icon orange">⚠</div>
-            </div>
-            <strong>3</strong>
-            <p>IP sẽ bị khóa sau 3 lần vi phạm mức rủi ro cao.</p>
-        </div>
 
         <div class="stat-card">
+
             <div class="stat-top">
-                <span>Chặn ngay</span>
-                <div class="stat-icon purple">!</div>
+
+                <span>
+                    Tổng request bị chặn
+                </span>
+
+                <div class="stat-icon orange">
+                    ⚠
+                </div>
+
             </div>
-            <strong>95+</strong>
-            <p>Risk Score từ 95 trở lên sẽ khóa IP ngay lập tức.</p>
+
+            <strong>
+                {{ stats.blocked }}
+            </strong>
+
+            <p>
+                Security Event có action BLOCK.
+            </p>
+
         </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-top">
+
+                <span>
+                    Tổng tấn công
+                </span>
+
+                <div class="stat-icon blue">
+                    🛡
+                </div>
+
+            </div>
+
+            <strong>
+                {{ stats.attacks }}
+            </strong>
+
+            <p>
+                Sự kiện bảo mật được hệ thống ghi nhận.
+            </p>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-top">
+
+                <span>
+                    Critical
+                </span>
+
+                <div class="stat-icon purple">
+                    !
+                </div>
+
+            </div>
+
+            <strong>
+                {{ stats.critical }}
+            </strong>
+
+            <p>
+                Sự kiện có Risk Score từ 90 trở lên.
+            </p>
+
+        </div>
+
     </section>
 
-    <section class="panel">
-        <div class="panel-header">
-            <div>
-                <h2>IP đang bị khóa</h2>
-                <p>Danh sách địa chỉ IP không được phép gửi request qua Security Gateway.</p>
+
+    <!-- =====================================================
+         SUMMARY
+    ====================================================== -->
+
+    <section class="blocked-summary">
+
+        <div class="blocked-summary-card">
+
+            <div class="summary-label">
+                SQL Injection
             </div>
 
-            <button class="refresh-btn" onclick="window.location.reload()">
-                ↻ Làm mới
-            </button>
+            <div class="summary-value">
+                {{ stats.sql_injection }}
+            </div>
+
+            <div class="summary-desc">
+                Sự kiện SQL Injection đã phát hiện.
+            </div>
+
         </div>
 
+
+        <div class="blocked-summary-card">
+
+            <div class="summary-label">
+                XSS
+            </div>
+
+            <div class="summary-value">
+                {{ stats.xss }}
+            </div>
+
+            <div class="summary-desc">
+                Payload Cross-Site Scripting đã phát hiện.
+            </div>
+
+        </div>
+
+
+        <div class="blocked-summary-card">
+
+            <div class="summary-label">
+                API Abuse
+            </div>
+
+            <div class="summary-value">
+                {{ stats.api_abuse }}
+            </div>
+
+            <div class="summary-desc">
+                Client vượt giới hạn request.
+            </div>
+
+        </div>
+
+
+        <div class="blocked-summary-card">
+
+            <div class="summary-label">
+                Brute Force
+            </div>
+
+            <div class="summary-value">
+                {{ stats.brute_force }}
+            </div>
+
+            <div class="summary-desc">
+                Hành vi đăng nhập thất bại liên tục.
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         SEARCH
+    ====================================================== -->
+
+    <section class="blocked-filter">
+
+        <input
+            id="blockedSearch"
+            class="blocked-search"
+            type="text"
+            placeholder="Tìm theo IP, Client ID hoặc lý do chặn..."
+        >
+
+        <span
+            id="blockedCount"
+            class="filter-count"
+        >
+            {{ blocked_ips|length }}
+            client
+        </span>
+
+    </section>
+
+
+    <!-- =====================================================
+         TABLE
+    ====================================================== -->
+
+    <section class="panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h2>
+                    Client đang bị khóa
+                </h2>
+
+                <p>
+                    Chỉ hiển thị các block còn hiệu lực.
+                    Block hết hạn được hệ thống tự động vô hiệu hóa.
+                </p>
+
+            </div>
+
+
+            <button
+                class="refresh-btn"
+                onclick="window.location.reload()"
+            >
+                ↻ Làm mới
+            </button>
+
+        </div>
+
+
         <div class="table-wrapper">
-            <table>
+
+            <table class="blocked-table">
+
                 <thead>
+
                 <tr>
-                    <th>ĐỊA CHỈ IP</th>
-                    <th>SỐ LẦN VI PHẠM</th>
-                    <th>TỔNG ĐIỂM RỦI RO</th>
-                    <th>LÝ DO CHẶN</th>
-                    <th>THỜI GIAN CHẶN</th>
-                    <th>TRẠNG THÁI</th>
-                    <th>THAO TÁC</th>
+
+                    <th>
+                        IP
+                    </th>
+
+                    <th>
+                        CLIENT ID
+                    </th>
+
+                    <th>
+                        VI PHẠM
+                    </th>
+
+                    <th>
+                        TOTAL RISK
+                    </th>
+
+                    <th>
+                        LÝ DO CHẶN
+                    </th>
+
+                    <th>
+                        THỜI GIAN KHÓA
+                    </th>
+
+                    <th>
+                        HẾT HẠN
+                    </th>
+
+                    <th>
+                        CÒN LẠI
+                    </th>
+
+                    <th>
+                        TRẠNG THÁI
+                    </th>
+
+                    <th>
+                        THAO TÁC
+                    </th>
+
                 </tr>
+
                 </thead>
 
+
                 <tbody>
+
                 {% if blocked_ips %}
+
                     {% for item in blocked_ips %}
-                    <tr>
-                        <td>
-                            <span class="ip-text">{{ item.ip_address }}</span>
-                        </td>
 
-                        <td>
-                            <strong>{{ item.violation_count }}</strong>
-                        </td>
+                    <tr
+                        class="blocked-row"
 
-                        <td>
-                            {% if item.total_risk >= 270 %}
-                                <span class="risk-badge risk-critical">
-                                    {{ item.total_risk }}
-                                </span>
-                            {% elif item.total_risk >= 180 %}
-                                <span class="risk-badge risk-high">
-                                    {{ item.total_risk }}
-                                </span>
-                            {% else %}
-                                <span class="risk-badge risk-medium">
-                                    {{ item.total_risk }}
-                                </span>
-                            {% endif %}
-                        </td>
-
-                        <td>
+                        data-search="
+                            {{ item.ip_address }}
+                            {{ item.client_key }}
                             {{ item.reason }}
-                        </td>
+                        "
+                    >
 
-                        <td>
-                            {{ item.blocked_at }}
-                        </td>
+                        <!-- IP -->
 
-                        <td>
-                            <span class="action-badge action-block">
-                                ĐANG CHẶN
+                        <td class="ip-cell">
+
+                            <span class="ip-text">
+                                {{ item.ip_address }}
                             </span>
+
                         </td>
 
+
+                        <!-- CLIENT KEY -->
+
+                        <td class="client-cell">
+
+                            <span
+                                class="client-key"
+                                title="{{ item.client_key }}"
+                            >
+                                {{ item.client_key_short }}
+                            </span>
+
+                            <div class="client-label">
+                                SHA-256 Client Key
+                            </div>
+
+                        </td>
+
+
+                        <!-- VIOLATION -->
+
                         <td>
+
+                            <span class="violation-count">
+
+                                {{ item.violation_count }}
+                                lần
+
+                            </span>
+
+                            <span class="violation-note">
+                                Vi phạm đã ghi nhận
+                            </span>
+
+                        </td>
+
+
+                        <!-- TOTAL RISK -->
+
+                        <td>
+
+                            {% if item.total_risk >= 270 %}
+
+                                <span
+                                    class="
+                                        risk-badge
+                                        risk-critical
+                                    "
+                                >
+                                    {{ item.total_risk }}
+                                </span>
+
+                            {% elif item.total_risk >= 180 %}
+
+                                <span
+                                    class="
+                                        risk-badge
+                                        risk-high
+                                    "
+                                >
+                                    {{ item.total_risk }}
+                                </span>
+
+                            {% elif item.total_risk >= 90 %}
+
+                                <span
+                                    class="
+                                        risk-badge
+                                        risk-medium
+                                    "
+                                >
+                                    {{ item.total_risk }}
+                                </span>
+
+                            {% else %}
+
+                                <span
+                                    class="
+                                        risk-badge
+                                        risk-low
+                                    "
+                                >
+                                    {{ item.total_risk }}
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- REASON -->
+
+                        <td class="reason-cell">
+
+                            <div
+                                class="reason-text"
+                                title="{{ item.reason }}"
+                            >
+
+                                {{ item.reason }}
+
+                            </div>
+
+                        </td>
+
+
+                        <!-- BLOCKED AT -->
+
+                        <td class="date-cell">
+
+                            <div class="date-label">
+                                Khóa lúc
+                            </div>
+
+                            <div>
+                                {{ item.blocked_at or "-" }}
+                            </div>
+
+                        </td>
+
+
+                        <!-- EXPIRES -->
+
+                        <td class="date-cell">
+
+                            <div class="date-label">
+                                Hết hạn
+                            </div>
+
+                            <div>
+                                {{ item.expires_at or "Không giới hạn" }}
+                            </div>
+
+                        </td>
+
+
+                        <!-- REMAINING -->
+
+                        <td class="remaining-box">
+
+                            <div class="remaining-value">
+
+                                {{ item.remaining_text }}
+
+                            </div>
+
+
+                            {% if item.remaining_seconds is not none %}
+
+                            <div class="remaining-seconds">
+
+                                {{ item.remaining_seconds }}
+                                giây
+
+                            </div>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- STATUS -->
+
+                        <td>
+
+                            <span class="client-blocked-status">
+
+                                ĐANG CHẶN
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- ACTION -->
+
+                        <td>
+
+                            {% if item.client_key %}
+
                             <form
                                 method="post"
-                                action="/ip-bi-chan/{{ item.ip_address }}/bo-chan"
-                                onsubmit="return confirm('Bạn có chắc muốn bỏ chặn IP {{ item.ip_address }}?')"
+
+                                action="/client-bi-chan/{{ item.client_key }}/bo-chan"
+
+                                onsubmit="
+                                    return confirm(
+                                        'Bạn có chắc muốn bỏ chặn client này?'
+                                    );
+                                "
                             >
-                                <button type="submit" class="unblock-btn">
-                                    Bỏ chặn
+
+                                <button
+                                    type="submit"
+                                    class="unblock-btn"
+                                >
+
+                                    Bỏ chặn Client
+
                                 </button>
+
                             </form>
+
+
+                            <div class="unblock-note">
+
+                                Reset số lần vi phạm
+
+                            </div>
+
+
+                            {% else %}
+
+                            <!-- FALLBACK NẾU KHÔNG CÓ CLIENT KEY -->
+
+                            <form
+                                method="post"
+
+                                action="/ip-bi-chan/{{ item.ip_address }}/bo-chan"
+
+                                onsubmit="
+                                    return confirm(
+                                        'Bạn có chắc muốn bỏ chặn IP này?'
+                                    );
+                                "
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="unblock-btn"
+                                >
+
+                                    Bỏ chặn IP
+
+                                </button>
+
+                            </form>
+
+                            {% endif %}
+
                         </td>
+
                     </tr>
+
                     {% endfor %}
+
+
+                    <!-- FILTER EMPTY -->
+
+                    <tr id="filterEmpty">
+
+                        <td
+                            colspan="10"
+                            class="empty-state"
+                        >
+
+                            <div class="empty-shield">
+                                ⌕
+                            </div>
+
+                            <strong>
+                                Không tìm thấy client phù hợp
+                            </strong>
+
+                            <p>
+                                Hãy thử tìm bằng IP hoặc Client ID khác.
+                            </p>
+
+                        </td>
+
+                    </tr>
+
 
                 {% else %}
 
                     <tr>
-                        <td colspan="7" class="empty-state">
-                            <div class="empty-shield">✓</div>
-                            <strong>Chưa có IP nào bị chặn</strong>
-                            <p>Khi một IP vi phạm quy tắc bảo mật nhiều lần hoặc có Risk Score quá cao, địa chỉ IP đó sẽ tự động xuất hiện tại đây.</p>
+
+                        <td
+                            colspan="10"
+                            class="empty-state"
+                        >
+
+                            <div class="empty-shield">
+                                ✓
+                            </div>
+
+                            <strong>
+                                Không có Client/IP nào đang bị chặn
+                            </strong>
+
+                            <p>
+                                Khi một client vi phạm nhiều lần
+                                hoặc đạt Risk Score khóa ngay,
+                                client đó sẽ xuất hiện tại đây.
+                            </p>
+
                         </td>
+
                     </tr>
 
                 {% endif %}
+
                 </tbody>
+
             </table>
-        </div>
-    </section>
 
-    <section class="info-grid" style="margin-top: 20px;">
-
-        <div class="info-card">
-            <div class="info-header">
-                <h3>Cơ chế tự động chặn IP</h3>
-                <p>Security Tool đánh giá mỗi request dựa trên mức độ nguy hiểm.</p>
-            </div>
-
-            <div class="service-row">
-                <span>Vi phạm lần 1</span>
-                <span class="service-active">Ghi nhận</span>
-            </div>
-
-            <div class="service-row">
-                <span>Vi phạm lần 2</span>
-                <span class="service-active">Theo dõi</span>
-            </div>
-
-            <div class="service-row">
-                <span>Vi phạm lần 3</span>
-                <span class="action-badge action-block">CHẶN IP</span>
-            </div>
-
-            <div class="service-row">
-                <span>Risk Score ≥ 95</span>
-                <span class="action-badge action-block">CHẶN NGAY</span>
-            </div>
-        </div>
-
-        <div class="info-card">
-            <div class="info-header">
-                <h3>Quy trình xử lý IP</h3>
-                <p>Mọi request đều được kiểm tra IP trước khi chuyển tới backend.</p>
-            </div>
-
-            <div class="risk-row">
-                <span><i class="risk-dot low"></i> IP bình thường</span>
-                <strong>CHO PHÉP</strong>
-            </div>
-
-            <div class="risk-row">
-                <span><i class="risk-dot medium"></i> Có dấu hiệu bất thường</span>
-                <strong>THEO DÕI</strong>
-            </div>
-
-            <div class="risk-row">
-                <span><i class="risk-dot high"></i> Vi phạm nhiều lần</span>
-                <strong>CẢNH BÁO</strong>
-            </div>
-
-            <div class="risk-row">
-                <span><i class="risk-dot critical"></i> IP đã bị khóa</span>
-                <strong>403 BLOCK</strong>
-            </div>
         </div>
 
     </section>
+
+
+    <!-- =====================================================
+         EXPLANATION
+    ====================================================== -->
+
+    <section class="security-flow">
+
+        <!-- AUTO BLOCK -->
+
+        <div class="security-flow-card">
+
+            <div class="flow-header">
+
+                <h3>
+                    Cơ chế tự động khóa Client
+                </h3>
+
+                <p>
+                    Security Tool theo dõi vi phạm
+                    theo Client Key và IP.
+                </p>
+
+            </div>
+
+
+            <div class="flow-step">
+
+                <span>
+                    Request an toàn
+                </span>
+
+                <strong class="flow-safe">
+                    CHO PHÉP
+                </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+                <span>
+                    Vi phạm lần đầu
+                </span>
+
+                <strong class="flow-watch">
+                    GHI NHẬN
+                </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+                <span>
+                    Vi phạm nhiều lần
+                </span>
+
+                <strong class="flow-watch">
+                    THEO DÕI
+                </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+                <span>
+                    Đạt MAX_VIOLATIONS
+                </span>
+
+                <strong class="flow-block">
+                    BLOCK CLIENT
+                </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+                <span>
+                    Risk ≥ IMMEDIATE_BLOCK_SCORE
+                </span>
+
+                <strong class="flow-block">
+                    BLOCK NGAY
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- BLOCK FLOW -->
+
+        <div class="security-flow-card">
+
+            <div class="flow-header">
+
+                <h3>
+                    Quy trình xử lý Client
+                </h3>
+
+                <p>
+                    Kiểm tra block được thực hiện
+                    trước khi request tới backend.
+                </p>
+
+            </div>
+
+
+            <div class="flow-step">
+
+                <span>
+                    Nhận request
+                </span>
+
+                <strong class="flow-safe">
+                    GATEWAY
+                </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+                <span>
+                    Tạo Client Key
+                </span>
+
+                <strong class="flow-safe">
+                    SHA-256
+                </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+                <span>
+                    Kiểm tra BlockedIp
+                </span>
+
+                <strong class="flow-watch">
+                    CHECK
+                </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+                <span>
+                    Client còn thời hạn block
+                </span>
+
+                <strong class="flow-block">
+                    403
+                </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+                <span>
+                    Block đã hết hạn
+                </span>
+
+                <strong class="flow-safe">
+                    TỰ MỞ KHÓA
+                </strong>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
 
     <footer class="footer">
-        Hệ thống phát hiện, cảnh báo và ngăn chặn hành vi tấn công trên website bất động sản
+
+        Hệ thống phát hiện, cảnh báo và ngăn chặn
+        hành vi tấn công trên website bất động sản
+
     </footer>
 
 </main>
 
+
+<!-- =========================================================
+     SEARCH SCRIPT
+========================================================= -->
+
+<script>
+
+    const blockedSearch =
+        document.getElementById(
+            "blockedSearch"
+        );
+
+    const blockedCount =
+        document.getElementById(
+            "blockedCount"
+        );
+
+    const filterEmpty =
+        document.getElementById(
+            "filterEmpty"
+        );
+
+
+    function filterBlockedClients() {
+
+        const keyword =
+            blockedSearch
+            .value
+            .trim()
+            .toLowerCase();
+
+
+        const rows =
+            document.querySelectorAll(
+                ".blocked-row"
+            );
+
+
+        let visible = 0;
+
+
+        rows.forEach(
+            row => {
+
+                const searchValue =
+                    (
+                        row.dataset.search
+                        || ""
+                    )
+                    .toLowerCase();
+
+
+                const matches =
+                    !keyword
+                    ||
+                    searchValue.includes(
+                        keyword
+                    );
+
+
+                row.classList.toggle(
+                    "hidden-block-row",
+                    !matches
+                );
+
+
+                if (matches) {
+                    visible++;
+                }
+
+            }
+        );
+
+
+        blockedCount.textContent =
+            `${visible} client`;
+
+
+        if (filterEmpty) {
+
+            filterEmpty.style.display =
+                (
+                    visible === 0
+                    &&
+                    rows.length > 0
+                )
+                    ? "table-row"
+                    : "none";
+
+        }
+
+    }
+
+
+    blockedSearch.addEventListener(
+        "input",
+        filterBlockedClients
+    );
+
+</script>
+
+
+<!-- =========================================================
+     AUTO REFRESH
+========================================================= -->
+
+<script>
+
+    /*
+        Reload mỗi 30 giây để:
+        - remaining_text được cập nhật
+        - block hết hạn biến mất
+        - số client đang block chính xác
+
+        Chỉ reload khi tab đang được mở.
+    */
+
+    window.setInterval(
+        () => {
+
+            if (
+                document.visibilityState
+                === "visible"
+            ) {
+                window.location.reload();
+            }
+
+        },
+        30000
+    );
+
+</script>
+
+
 </body>
+
 </html>
